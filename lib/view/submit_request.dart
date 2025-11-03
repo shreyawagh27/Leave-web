@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,8 +11,8 @@ class MyWidget extends StatefulWidget {
 
 class _MyWidgetState extends State<MyWidget> {
   String? selectedLeaveType;
-  String? selectedDate; 
-  String? selectedEndDate; 
+  String? selectedDate;
+  String? selectedEndDate;
   String? selectedDurationType;
   TextEditingController desController = TextEditingController();
 
@@ -84,7 +83,6 @@ class _MyWidgetState extends State<MyWidget> {
 
             const SizedBox(height: 10),
 
-            
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -104,7 +102,9 @@ class _MyWidgetState extends State<MyWidget> {
                   );
                   if (datePicked != null) {
                     setState(() {
-                      selectedDate = DateFormat('dd MMM yyyy').format(datePicked);
+                      selectedDate = DateFormat(
+                        'dd MMM yyyy',
+                      ).format(datePicked);
                     });
                   }
                 },
@@ -131,8 +131,6 @@ class _MyWidgetState extends State<MyWidget> {
 
             const SizedBox(height: 10),
 
-         
-         
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -151,14 +149,15 @@ class _MyWidgetState extends State<MyWidget> {
                   DateTime? datePicked = await showDatePicker(
                     context: context,
                     initialDate: start,
-                    firstDate: start, 
+                    firstDate: start,
                     lastDate: DateTime(2074),
                   );
 
                   if (datePicked != null) {
                     setState(() {
-                      selectedEndDate =
-                          DateFormat('dd MMM yyyy').format(datePicked);
+                      selectedEndDate = DateFormat(
+                        'dd MMM yyyy',
+                      ).format(datePicked);
                     });
                   }
                 },
@@ -185,7 +184,6 @@ class _MyWidgetState extends State<MyWidget> {
 
             const SizedBox(height: 10),
 
-           
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -226,7 +224,7 @@ class _MyWidgetState extends State<MyWidget> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.black),
               ),
-              child:  TextField(
+              child: TextField(
                 controller: desController,
                 maxLines: 3,
                 decoration: InputDecoration(
@@ -241,14 +239,43 @@ class _MyWidgetState extends State<MyWidget> {
 
             FilledButton(
               onPressed: () async {
-                if(selectedLeaveType == null){
-                  print('selected leave type must be declare'); //pop call
+                if (selectedLeaveType == null || selectedLeaveType!.isEmpty) {
+                  print('Please select a leave type');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please select a leave type')),
+                  );
                   return;
                 }
-                //if
+                if (selectedDurationType == null || selectedDurationType!.isEmpty){
+                  print('Please select a duration');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please select a Duration')),
+                  );
+                  return;
+                }
+                if (desController.text.trim().isEmpty){
+                  print('Please enter a description');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a description')),
 
-                Map<String,dynamic> data = {'name':'shreya','start': selectedDate,'end':selectedEndDate,'type':selectedLeaveType,'duration':selectedDurationType,'description': desController.text };
-              await FirebaseFirestore.instance.collection("leave_request").add(data);
+                  );
+                  return;
+                }
+
+                Map<String, dynamic> data = {
+                  'name': 'shreya',
+                  'start': selectedDate,
+                  'end': selectedEndDate,
+                  'type': selectedLeaveType,
+                  'duration': selectedDurationType,
+                  'description': desController.text,
+                };
+                await FirebaseFirestore.instance
+                    .collection("leave_request")
+                    .add(data);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Leave request submitted successfully!')),
+                );
               },
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF4285F4),
