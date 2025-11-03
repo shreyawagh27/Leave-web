@@ -4,22 +4,20 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LeaveRequest {
   String name;
-  String leaveType;
+  String type;
+  String duration;
   DateTime startDate;
   DateTime endDate;
-  int daysCount;
-  String note;
-  String initial;
+  String description;
   String status;
 
   LeaveRequest({
     required this.name,
-    required this.leaveType,
+    required this.type,
+    required this.duration,
     required this.startDate,
     required this.endDate,
-    required this.daysCount,
-    required this.note,
-    required this.initial,
+    required this.description,
     this.status = 'Pending',
   });
 }
@@ -27,168 +25,180 @@ class LeaveRequest {
 class LeaveRequestPage extends StatefulWidget {
   const LeaveRequestPage({super.key});
 
-
   @override
   State<LeaveRequestPage> createState() => _LeaveRequestPageState();
 }
 
-
 class _LeaveRequestPageState extends State<LeaveRequestPage> {
   List<LeaveRequest> allLeaveRequests = [];
-   bool isloading= true;
+  bool isLoading = true;
 
-@override
- void initState() {
-
+  @override
+  void initState() {
     super.initState();
-    fetchdata();
-
-  }
-  void fetchdata()async{
-       var responce=await FirebaseFirestore.instance.collection('leaverequest').get();
-       List data=responce.docs;
-        //  print(data);
-        
-        
-        for(int i =0;i<data.length;i++){
-         var document=data[i];
-         DateFormat format = DateFormat("dd MMM yyyy");
-
-         LeaveRequest leaverequest = LeaveRequest(name: document['name'] , leaveType: document['leaveType'], startDate:format.parse(document['start']) , endDate:format.parse(document['end']), daysCount: 2, note: 'not', initial: 'A');
-        allLeaveRequests.add(leaverequest);
-        
-         print(document['name']);
-         print(document['start']);
-         print(document['end']);
-         print(document['leaveType']);
-
-        }
-        print(allLeaveRequests);  
-        setState(() {
-          isloading=false;
-        });   
+    fetchData();
   }
 
+  
+  Future<void> fetchData() async {
+    try {
+      final response =
+          await FirebaseFirestore.instance.collection('leave_request').get();
+      List data = response.docs;
+
+      allLeaveRequests.clear(); 
+
+      DateFormat format = DateFormat("dd MMM yyyy");
+
+      for (var document in data) {
+        LeaveRequest leaveRequest = LeaveRequest(
+          name: document['name'] ?? 'Unknown',
+          type: document['type'] ?? 'N/A',
+          duration: document['duration'] ?? 'N/A',
+          startDate: format.parse(document['start']),
+          endDate: format.parse(document['end']),
+          description: document['description'] ?? '',
+        );
+        allLeaveRequests.add(leaveRequest);
+      }
+
+      setState(() {
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching data: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Leave Requests'),
+        backgroundColor: const Color(0xFF4285F4),
       ),
-      backgroundColor: const Color.fromARGB(255, 152, 49, 207),
-      body: ListView.builder(
-        itemCount: allLeaveRequests.length,
-        itemBuilder: (context, index) {
-          final leave = allLeaveRequests[index];
-          return Card(
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 4,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor:
-                            const Color.fromARGB(255, 174, 132, 252),
-                        child: Text(
-                          leave.initial,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+      backgroundColor: const Color.fromARGB(255, 240, 240, 240),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : allLeaveRequests.isEmpty
+              ? const Center(child: Text('No leave requests found.'))
+              : ListView.builder(
+                  itemCount: allLeaveRequests.length,
+                  itemBuilder: (context, index) {
+                    final leave = allLeaveRequests[index];
+                    return Card(
+                      margin: const EdgeInsets.all(12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor:
+                                      const Color.fromARGB(255, 108, 185, 248),
+                                  child: Text(
+                                    leave.name.isNotEmpty
+                                        ? leave.name[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      leave.name,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Type: ${leave.type}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'From: ${DateFormat('dd MMM yyyy').format(leave.startDate)}',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                                Text(
+                                  'To: ${DateFormat('dd MMM yyyy').format(leave.endDate)}',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text('Duration: ${leave.duration}'),
+                            const SizedBox(height: 8),
+                            Text('Reason: ${leave.description}'),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                _actionButton('Approve', Colors.green, () {
+                                  setState(() {
+                                    leave.status = 'Approved';
+                                  });
+                                }),
+                                const SizedBox(width: 8),
+                                _actionButton('Reject', Colors.redAccent, () {
+                                  setState(() {
+                                    leave.status = 'Rejected';
+                                  });
+                                }),
+                                const SizedBox(width: 8),
+                                _actionButton('View', Colors.blueAccent, () {
+                                  _showDetailsDialog(context, leave);
+                                }),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'Status: ${leave.status}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: leave.status == 'Approved'
+                                      ? Colors.green
+                                      : leave.status == 'Rejected'
+                                          ? Colors.red
+                                          : Colors.orange,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            leave.name,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Type: ${leave.leaveType}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Text(
-                        'From: ${DateFormat('dd MMM yyyy').format(leave.startDate)}',
-                      ),
-
-                      Text(
-                        'To: ${DateFormat('dd MMM yyyy').format(leave.endDate)}',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text('Duration: ${leave.daysCount}'),
-                  const SizedBox(height: 8),
-                  Text('Reason: ${leave.note}'),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      _actionButton('View', Colors.blueAccent, () async{
-                        await FirebaseFirestore.instance.collection("leaverequest").add({"name":"arati","leaveType":"casual leave"});
-                        _showDetailsDialog(context, leave);
-                      }),
-                      const SizedBox(width: 8),
-                      _actionButton('Reject', Colors.redAccent, () async{
-                        await FirebaseFirestore.instance.collection("rejectlist").add({"arati":"important deadlines"});
-                        setState(() {
-                          leave.status = 'Rejected';
-                        });
-                      }),
-                      const SizedBox(width: 8),
-                      _actionButton('Approve', Colors.green, () {
-                        setState(() {
-                          leave.status = 'Approved';
-                        });
-                      }),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      'Status: ${leave.status}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: leave.status == 'Approved'
-                            ? Colors.green
-                            : leave.status == 'Rejected'
-                                ? Colors.red
-                                : Colors.orange,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+                    );
+                  },
+                ),
     );
   }
 
@@ -207,13 +217,13 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('${leave.name} - Details'),
+        title: Text('${leave.name} - Leave Details'),
         content: Text(
-          'Leave Type: ${leave.leaveType}\n'
+          'Type: ${leave.type}\n'
+          'Duration: ${leave.duration}\n'
           'From: ${DateFormat('dd MMM yyyy').format(leave.startDate)}\n'
           'To: ${DateFormat('dd MMM yyyy').format(leave.endDate)}\n'
-          'Days: ${leave.daysCount}\n'
-          'Reason: ${leave.note}\n'
+          'Reason: ${leave.description}\n'
           'Status: ${leave.status}',
         ),
         actions: [
