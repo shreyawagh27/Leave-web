@@ -1,21 +1,40 @@
+
+import 'package:intl/intl.dart';
+
 class LeaveRequest {
   String name;
-  String leaveType;
+  String type;
+  String duration;
   DateTime startDate;
   DateTime endDate;
-  int daysCount;
-  String note;
-  String initial;
+  String description;
   String status;
+  String id;
 
   LeaveRequest({
     required this.name,
-    required this.leaveType,
+    required this.type,
+    required this.duration,
     required this.startDate,
     required this.endDate,
-    required this.daysCount,
-    required this.note,
-    required this.initial,
-    this.status = 'Pending',
+    required this.description,
+    required this.id,
+    required this.status,
+
   });
+   Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'start': DateFormat('dd MMM yyyy').format(startDate),
+      'end': DateFormat('dd MMM yyyy').format(endDate),
+      'type': type,
+      'duration': duration,
+      'description': description,
+      'id': id,
+      'status': status,
+    };
+  }
+  
+ 
 }
+

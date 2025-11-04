@@ -1,19 +1,19 @@
 import 'dart:developer';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../model/leave_request_model.dart';
 
-class LeaveRequestPage extends StatefulWidget {
-  const LeaveRequestPage({super.key});
+class DashboardPage extends StatefulWidget {
+  const DashboardPage({super.key});
 
   @override
-  State<LeaveRequestPage> createState() => _LeaveRequestPageState();
+  State<DashboardPage> createState() => DashboardPageState();
 }
 
-class _LeaveRequestPageState extends State<LeaveRequestPage> {
+class DashboardPageState extends State<DashboardPage> {
   List<LeaveRequest> allLeaveRequests = [];
   bool isLoading = true;
 
@@ -158,51 +158,9 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            _actionButton(
-                              'Approve',
-                              Color(0xFF4CAF50),
-                              () async {
-                                await FirebaseFirestore.instance
-                                    .collection('leave_request')
-                                    .doc(leave.id)
-                                    .update({'status': 'Approved'});
-                                setState(() {
-                                  leave.status = 'Approved';
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Leave request Approved successfully!',
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 8),
                             _actionButton('View', Colors.blueAccent, () {
                               _showDetailsDialog(context, leave);
                             }),
-                            const SizedBox(width: 8),
-                            _actionButton(
-                              'Reject',
-                              const Color.fromARGB(255, 255, 62, 62),
-                              () async {
-                                await FirebaseFirestore.instance
-                                    .collection('leave_request')
-                                    .doc(leave.id)
-                                    .update({'status': 'Rejected'});
-                                setState(() {
-                                  leave.status = 'Rejected';
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Leave request Rejected successfully!',
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
                           ],
                         ),
                         const SizedBox(height: 10),
@@ -229,6 +187,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
     );
   }
 
+  // Reusable button widget
   Widget _actionButton(String label, Color color, VoidCallback onPressed) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(

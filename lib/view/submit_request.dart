@@ -1,6 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+
+
+import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/model/leave_request_model.dart';
+import 'package:intl/intl.dart';
 
 class MyWidget extends StatefulWidget {
   const MyWidget({super.key});
@@ -83,6 +88,7 @@ class _MyWidgetState extends State<MyWidget> {
 
             const SizedBox(height: 10),
 
+            // Start Date Picker
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -102,20 +108,14 @@ class _MyWidgetState extends State<MyWidget> {
                   );
                   if (datePicked != null) {
                     setState(() {
-                      selectedDate = DateFormat(
-                        'dd MMM yyyy',
-                      ).format(datePicked);
+                      selectedDate = DateFormat('dd MMM yyyy').format(datePicked);
                     });
                   }
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 20,
-                      color: Colors.black54,
-                    ),
+                    const Icon(Icons.calendar_today, size: 20, color: Colors.black54),
                     const SizedBox(width: 8),
                     Text(
                       selectedDate ?? 'Start Date',
@@ -131,6 +131,7 @@ class _MyWidgetState extends State<MyWidget> {
 
             const SizedBox(height: 10),
 
+            // End Date Picker
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -155,20 +156,14 @@ class _MyWidgetState extends State<MyWidget> {
 
                   if (datePicked != null) {
                     setState(() {
-                      selectedEndDate = DateFormat(
-                        'dd MMM yyyy',
-                      ).format(datePicked);
+                      selectedEndDate = DateFormat('dd MMM yyyy').format(datePicked);
                     });
                   }
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 20,
-                      color: Colors.black54,
-                    ),
+                    const Icon(Icons.calendar_today, size: 20, color: Colors.black54),
                     const SizedBox(width: 8),
                     Text(
                       selectedEndDate ?? 'End Date',
@@ -184,6 +179,7 @@ class _MyWidgetState extends State<MyWidget> {
 
             const SizedBox(height: 10),
 
+            // Duration Type Dropdown
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -215,6 +211,7 @@ class _MyWidgetState extends State<MyWidget> {
 
             const SizedBox(height: 10),
 
+            // Description Box
             Container(
               width: MediaQuery.of(context).size.width,
               height: 80,
@@ -227,7 +224,7 @@ class _MyWidgetState extends State<MyWidget> {
               child: TextField(
                 controller: desController,
                 maxLines: 3,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Briefly describe your reason...',
                   border: InputBorder.none,
                   hintStyle: TextStyle(color: Colors.black54),
@@ -237,44 +234,54 @@ class _MyWidgetState extends State<MyWidget> {
 
             const SizedBox(height: 10),
 
+            // Submit Button
             FilledButton(
               onPressed: () async {
                 if (selectedLeaveType == null || selectedLeaveType!.isEmpty) {
-                  print('Please select a leave type');
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Please select a leave type')),
                   );
                   return;
                 }
-                if (selectedDurationType == null || selectedDurationType!.isEmpty){
-                  print('Please select a duration');
+                if (selectedDurationType == null || selectedDurationType!.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Please select a Duration')),
                   );
                   return;
                 }
-                if (desController.text.trim().isEmpty){
-                  print('Please enter a description');
+                if (desController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Please enter a description')),
-
                   );
                   return;
                 }
 
-                Map<String, dynamic> data = {
-                  'name': 'shreya',
-                  'start': selectedDate,
-                  'end': selectedEndDate,
-                  'type': selectedLeaveType,
-                  'duration': selectedDurationType,
-                  'description': desController.text,
-                };
-                await FirebaseFirestore.instance
+                LeaveRequest leaveRequest = LeaveRequest(
+                  name: 'shreya',
+                  type: selectedLeaveType!,
+                  duration: selectedDurationType!,
+                  startDate: DateFormat('dd MMM yyyy').parse(selectedDate!),
+                  endDate: DateFormat('dd MMM yyyy').parse(selectedEndDate!),
+                  description: desController.text,
+                  id: '',
+                  status: 'Pending',
+                );
+
+                log(leaveRequest.toMap().toString());
+                // Add to Firestore
+                DocumentReference docRef = await FirebaseFirestore.instance
                     .collection("leave_request")
-                    .add(data);
+                    .add(leaveRequest.toMap());
+
+                // Update document with its own ID
+                await docRef.update({'id': docRef.id});
+
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Leave request submitted successfully!')),
+                  SnackBar(
+                    content: Text(
+                      'Leave request submitted successfully! (ID: ${docRef.id})',
+                    ),
+                  ),
                 );
               },
               style: FilledButton.styleFrom(
