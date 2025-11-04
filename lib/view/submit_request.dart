@@ -269,6 +269,7 @@ class _MyWidgetState extends State<MyWidget> {
                   'type': selectedLeaveType,
                   'duration': selectedDurationType,
                   'description': desController.text,
+                   
                 };
                 await FirebaseFirestore.instance
                     .collection("leave_request")

@@ -1,26 +1,11 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class LeaveRequest {
-  String name;
-  String type;
-  String duration;
-  DateTime startDate;
-  DateTime endDate;
-  String description;
-  String status;
+import '../model/leave_request_model.dart';
 
-  LeaveRequest({
-    required this.name,
-    required this.type,
-    required this.duration,
-    required this.startDate,
-    required this.endDate,
-    required this.description,
-    this.status = 'Pending',
-  });
-}
 
 class LeaveRequestPage extends StatefulWidget {
   const LeaveRequestPage({super.key});
@@ -40,39 +25,55 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
   }
 
   
-  Future<void> fetchData() async {
-    try {
-      final response =
-          await FirebaseFirestore.instance.collection('leave_request').get();
-      List data = response.docs;
+ Future<void> fetchData() async {
+  try {
+    
+    final response =
+        await FirebaseFirestore.instance.collection('leave_request').get();
 
-      allLeaveRequests.clear(); 
+    List data = response.docs;
+    allLeaveRequests.clear();
 
-      DateFormat format = DateFormat("dd MMM yyyy");
+    
+    DateFormat format = DateFormat("dd MMM yyyy");
 
-      for (var document in data) {
-        LeaveRequest leaveRequest = LeaveRequest(
-          name: document['name'] ?? 'Unknown',
-          type: document['type'] ?? 'N/A',
-          duration: document['duration'] ?? 'N/A',
-          startDate: format.parse(document['start']),
-          endDate: format.parse(document['end']),
-          description: document['description'] ?? '',
-        );
-        allLeaveRequests.add(leaveRequest);
-      }
+    
+    for (int i = 0; i < data.length; i++) {
+      final document = data[i];
+      final map = document.data() as Map<String, dynamic>;
+      log(document.id);
 
-      setState(() {
-        isLoading = false;
-      });
-    } catch (e) {
-      print('Error fetching data: $e');
-      setState(() {
-        isLoading = false;
-      });
+      
+      LeaveRequest leaveRequest = LeaveRequest(
+        id:document.id,
+        name: map['name'] ?? 'Unknown',
+        type: map['type'] ?? 'N/A',
+        duration: map['duration'] ?? 'N/A',
+        startDate: format.parse(map['start']),
+        endDate: format.parse(map['end']),
+        description: map['description'] ?? '',
+        status: map ['status'] ?? 'Pending',
+      );
+
+      
+      allLeaveRequests.add(leaveRequest);
+
+      
+      print("Fetched ${i + 1}/${data.length}: ${leaveRequest.name}");
     }
-  }
 
+ 
+    setState(() {
+      isLoading = false;
+    });
+  } catch (e) {
+  
+    print('Error fetching data: $e');
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,26 +159,54 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                             const SizedBox(height: 8),
                             Text('Reason: ${leave.description}'),
                             const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                _actionButton('Approve', Colors.green, () {
-                                  setState(() {
-                                    leave.status = 'Approved';
-                                  });
-                                }),
-                                const SizedBox(width: 8),
-                                _actionButton('Reject', Colors.redAccent, () {
-                                  setState(() {
-                                    leave.status = 'Rejected';
-                                  });
-                                }),
-                                const SizedBox(width: 8),
-                                _actionButton('View', Colors.blueAccent, () {
-                                  _showDetailsDialog(context, leave);
-                                }),
-                              ],
-                            ),
+                        Row(
+                             mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              leave.status == 'Pending'
+                                       ? Row(
+                                 children: [
+                                  _actionButton('Approve', Colors.green, () async {
+                                      await FirebaseFirestore.instance
+                                           .collection('leave_request')
+                                           .doc(leave.id)
+                                               .update({'status': 'Approved'});
+
+                                         setState(() {
+                                             leave.status = 'Approved';
+                                                });
+
+                                               ScaffoldMessenger.of(context).showSnackBar(
+                                                 const SnackBar(content: Text('Leave approved successfully')),
+                                                );
+                                                 }),
+                                           const SizedBox(width: 8),
+                                        _actionButton('Reject', Colors.redAccent, () async {
+                                            await FirebaseFirestore.instance
+                                                      .collection('leave_request')
+                                                      .doc(leave.id)
+                                                      .update({'status': 'Rejected'});
+
+                                                setState(() {
+                                                   leave.status = 'Rejected';
+                                                         });
+
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                         const SnackBar(content: Text('Leave rejected successfully')),
+                                                        );
+                                                   }),
+                                         const SizedBox(width: 8),
+                                            _actionButton('View', Colors.blueAccent, () {
+                                           _showDetailsDialog(context, leave);
+                                            }),
+                                               ],
+                                           )
+
+                                    : _actionButton('View', Colors.blueAccent, () {
+                                 _showDetailsDialog(context, leave);
+                                  }),
+                                      ],
+                                   ),
+
                             const SizedBox(height: 10),
                             Align(
                               alignment: Alignment.centerRight,
