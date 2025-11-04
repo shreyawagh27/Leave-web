@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_application_1/view/home_page.dart';
 import 'package:flutter_application_1/view/leave_request.dart';
 
 import 'view/submit_request.dart'; 
@@ -20,7 +21,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false, 
-      home: LeaveRequestPage(),
+      home: HomePage(),
     );
   }
 }
