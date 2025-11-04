@@ -74,8 +74,6 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
     });
   }
 }
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -161,41 +159,54 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                             const SizedBox(height: 8),
                             Text('Reason: ${leave.description}'),
                             const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                _actionButton('Approve', Color(0xFF4CAF50), () async {
-                                  await FirebaseFirestore.instance
-                                    .collection('leave_request')
-                                     .doc(leave.id)
-                                       .update({'status': 'Approved'});
-                                          setState(() {
-                                      leave.status = 'Approved';
-                                       });
-                                   ScaffoldMessenger.of(context).showSnackBar(
-                                     const SnackBar(content: Text('Leave request Approved successfully!')),
-                                     );
-                                }),
-                                const SizedBox(width: 8),
-                                _actionButton('View', Colors.blueAccent, () {
-                                  _showDetailsDialog(context, leave);
-                                }),
-                                const SizedBox(width:8),
-                                _actionButton('Reject', const Color.fromARGB(255, 255, 62, 62), () async {
-                                 await FirebaseFirestore.instance
-                                    .collection('leave_request')
-                                     .doc(leave.id)
-                                       .update({'status': 'Rejected'});
-                                          setState(() {
-                                      leave.status = 'Rejected';
-                                       });
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                     const SnackBar(content: Text('Leave request Rejected successfully!')),
-                                     );
-                                }
-                                ),
-                              ],
-                            ),
+                        Row(
+                             mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              leave.status == 'Pending'
+                                       ? Row(
+                                 children: [
+                                  _actionButton('Approve', Colors.green, () async {
+                                      await FirebaseFirestore.instance
+                                           .collection('leave_request')
+                                           .doc(leave.id)
+                                               .update({'status': 'Approved'});
+
+                                         setState(() {
+                                             leave.status = 'Approved';
+                                                });
+
+                                               ScaffoldMessenger.of(context).showSnackBar(
+                                                 const SnackBar(content: Text('Leave approved successfully')),
+                                                );
+                                                 }),
+                                           const SizedBox(width: 8),
+                                        _actionButton('Reject', Colors.redAccent, () async {
+                                            await FirebaseFirestore.instance
+                                                      .collection('leave_request')
+                                                      .doc(leave.id)
+                                                      .update({'status': 'Rejected'});
+
+                                                setState(() {
+                                                   leave.status = 'Rejected';
+                                                         });
+
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                         const SnackBar(content: Text('Leave rejected successfully')),
+                                                        );
+                                                   }),
+                                         const SizedBox(width: 8),
+                                            _actionButton('View', Colors.blueAccent, () {
+                                           _showDetailsDialog(context, leave);
+                                            }),
+                                               ],
+                                           )
+
+                                    : _actionButton('View', Colors.blueAccent, () {
+                                 _showDetailsDialog(context, leave);
+                                  }),
+                                      ],
+                                   ),
+
                             const SizedBox(height: 10),
                             Align(
                               alignment: Alignment.centerRight,
