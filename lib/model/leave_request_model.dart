@@ -1,21 +1,23 @@
+
 class LeaveRequest {
   String name;
-  String leaveType;
+  String type;
+  String duration;
   DateTime startDate;
   DateTime endDate;
-  int daysCount;
-  String note;
-  String initial;
+  String description;
   String status;
+  String id;
 
   LeaveRequest({
     required this.name,
-    required this.leaveType,
+    required this.type,
+    required this.duration,
     required this.startDate,
     required this.endDate,
-    required this.daysCount,
-    required this.note,
-    required this.initial,
-    this.status = 'Pending',
+    required this.description,
+    required this.id,
+    required this.status,
+
   });
 }
