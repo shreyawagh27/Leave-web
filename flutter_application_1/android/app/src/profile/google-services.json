@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "180004725321",
+    "project_id": "leaveapp-ec9c7",
+    "storage_bucket": "leaveapp-ec9c7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:180004725321:android:fface69b363e00c46a9598",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqa-Et-jw09v0Q-WxvEseY5yC0F0YSwyU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
