@@ -4,7 +4,9 @@ import 'package:flutter_application_1/view/home_page.dart';
 
 import 'package:flutter_application_1/view/leave_request.dart';
 
+import 'view/login_page.dart';
 import 'view/registration_page.dart';
+
 import 'view/submit_request.dart'; 
 import 'view/leave_request.dart';
 
@@ -23,7 +25,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false, 
-      home: RegisterPage(),
+      home: LoginPage(),
     );
   }
 }
