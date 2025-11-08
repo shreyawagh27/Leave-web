@@ -1,25 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
   bool _loading = false;
 
-  Future<void> login() async {
+  Future<void> register() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all fields")),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passwords do not match")),
       );
       return;
     }
@@ -27,31 +37,21 @@ class _LoginPageState extends State<LoginPage> {
     try {
       setState(() => _loading = true);
 
-      // 🔐 Firebase Authentication Login
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login successful!")),
+        const SnackBar(content: Text("Registration successful!")),
       );
 
-      // ✅ Navigate to home screen (you can replace with your main page)
-      Navigator.pushReplacementNamed(context, '/home');
-
+      _emailController.clear();
+      _passwordController.clear();
+      _confirmPasswordController.clear();
     } on FirebaseAuthException catch (e) {
-      String message = "Login failed";
-      if (e.code == 'user-not-found') {
-        message = "No user found for that email.";
-      } else if (e.code == 'wrong-password') {
-        message = "Incorrect password.";
-      } else if (e.code == 'invalid-email') {
-        message = "Invalid email format.";
-      }
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+        SnackBar(content: Text(e.message ?? "Registration failed")),
       );
     } finally {
       setState(() => _loading = false);
@@ -63,7 +63,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text("Login"),
+        title: const Text("Register"),
         centerTitle: true,
       ),
       body: Padding(
@@ -71,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 📧 Email field
+          
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
@@ -90,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 16),
 
-            // 🔒 Password field
+            
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
@@ -108,34 +108,37 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+
+            
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+              ),
+              child: TextField(
+                controller: _confirmPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: "Confirm Password",
+                  icon: Icon(Icons.lock_outline),
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
 
-            // 🚀 Login Button
             ElevatedButton(
-              onPressed: _loading ? null : login,
+              onPressed: _loading ? null : register,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueAccent,
                 minimumSize: const Size(double.infinity, 50),
               ),
               child: _loading
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("Login"),
-            ),
-
-            const SizedBox(height: 16),
-
-            // 🔗 Navigate to Register Page
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text("Don't have an account? "),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/register');
-                  },
-                  child: const Text("Register"),
-                ),
-              ],
+                  : const Text("Register"),
             ),
           ],
         ),
