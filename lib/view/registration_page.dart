@@ -11,6 +11,7 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
@@ -18,11 +19,12 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _loading = false;
 
   Future<void> register() async {
+    final username = _usernameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (username.isEmpty||  email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all fields")),
       );
@@ -46,12 +48,12 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       //firestore call
-      await FirebaseFirestore.instance.collection("user_data").doc(email).set({"username":"Newusername"});
+      await FirebaseFirestore.instance.collection("user_data").doc(email).set({"username":username});
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Registration successful!")),
       );
-
+      _usernameController.clear();
       _emailController.clear();
       _passwordController.clear();
       _confirmPasswordController.clear();
@@ -78,6 +80,23 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+              ),
+              child: TextField(
+                controller: _usernameController,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: "Username",
+                  icon: Icon(Icons.email),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
           
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -96,6 +115,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
             const SizedBox(height: 16),
+
 
             
             Container(

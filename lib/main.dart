@@ -26,7 +26,7 @@ class MainApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false, 
 
-      home: MyWidget (),
+      home: LoginPage(),
       
 
     );

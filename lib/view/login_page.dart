@@ -44,16 +44,6 @@ class _LoginPageState extends State<LoginPage> {
        var data = response.data();
        log(data!["username"]);
 
-        //store email & username in sharedprefernces
-        // SharedPreferences? _prefs;
-        // Future<void> _initPrefs() async {
-        // _prefs = await SharedPreferences.getInstance();
-        
-        // }
-
-        // Future<void> _setPrefs(String email, String username) async {
-        // await _prefs?.setString('email', email);
-        // await _prefs?.setString('username', username);
         
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('email', email);
