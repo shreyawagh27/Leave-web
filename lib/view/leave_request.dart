@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../model/leave_request_model.dart';
 
+
 class LeaveRequestPage extends StatefulWidget {
   const LeaveRequestPage({super.key});
 
@@ -22,6 +23,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
     super.initState();
     fetchData();
   }
+
 
   Future<void> fetchData() async {
     try {
@@ -63,9 +65,21 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
       setState(() {
         isLoading = false;
       });
-    }
-  }
 
+    }
+
+ 
+    setState(() {
+      isLoading = false;
+    });
+  } catch (e) {
+  
+    print('Error fetching data: $e');
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -134,6 +148,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                                 ),
                               ],
                             ),
+
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -202,6 +217,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                                   ),
                                 );
                               },
+
                             ),
                           ],
                         ),

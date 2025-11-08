@@ -273,10 +273,12 @@ class _MyWidgetState extends State<MyWidget> {
                   status: 'Pending',
                 );
 
+
                 log(leaveRequest.toMap().toString());
                 // Add to Firestore
                 
                 DocumentReference docRef = await FirebaseFirestore.instance
+
                     .collection("leave_request")
                     .add(leaveRequest.toMap());
 
