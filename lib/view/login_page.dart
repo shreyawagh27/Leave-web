@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/view/home_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -37,14 +38,27 @@ class _LoginPageState extends State<LoginPage> {
         password: password,
       );
 
-      // 7*8;
-      // var multiple = 7*8;
       
        var response = await FirebaseFirestore.instance.collection("user_data").doc(email).get();
        log(response.data().toString());
        var data = response.data();
        log(data!["username"]);
-       //store email & username in sharedperfernces
+
+        //store email & username in sharedprefernces
+        // SharedPreferences? _prefs;
+        // Future<void> _initPrefs() async {
+        // _prefs = await SharedPreferences.getInstance();
+        
+        // }
+
+        // Future<void> _setPrefs(String email, String username) async {
+        // await _prefs?.setString('email', email);
+        // await _prefs?.setString('username', username);
+        
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('email', email);
+      await prefs.setString('username', data["username"]);
+
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Login successful!")),

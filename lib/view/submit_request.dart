@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/model/leave_request_model.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MyWidget extends StatefulWidget {
   const MyWidget({super.key});
@@ -256,8 +257,11 @@ class _MyWidgetState extends State<MyWidget> {
                   return;
                 }
                 //get email and username from sharedperfernces
-                String email = "martin@gmail.com";
-                String username = "martin";
+                final prefs = await SharedPreferences.getInstance();
+                String email = prefs.getString('email') ?? '';
+                String username = prefs.getString('username') ?? '';
+                // String email = "martin@gmail.com";
+                // String username = "martin";
                 LeaveRequest leaveRequest = LeaveRequest(
                   name: username,
                   type: selectedLeaveType!,
