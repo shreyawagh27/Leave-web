@@ -9,6 +9,7 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final TextEditingController _user_nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
@@ -16,11 +17,12 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _loading = false;
 
   Future<void> register() async {
+    final user_name = _user_nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (user_name.isEmpty||email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all fields")),
       );
@@ -45,7 +47,7 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Registration successful!")),
       );
-
+      _user_nameController.clear();
       _emailController.clear();
       _passwordController.clear();
       _confirmPasswordController.clear();
@@ -71,6 +73,23 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+             Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+              ),
+              child: TextField(
+                controller: _user_nameController,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: "Username",
+                  icon: Icon(Icons.person),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
           
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),

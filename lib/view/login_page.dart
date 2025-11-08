@@ -1,5 +1,10 @@
-import 'package:flutter/material.dart';
+import 'dart:developer';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/view/home_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -27,18 +32,29 @@ class _LoginPageState extends State<LoginPage> {
     try {
       setState(() => _loading = true);
 
-      // 🔐 Firebase Authentication Login
+  
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      
+       var response = await FirebaseFirestore.instance.collection("user_data").doc(email).get();
+       log(response.data().toString());
+       var data = response.data();
+       log(data!["username"]);
+
+        
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('email', email);
+      await prefs.setString('username', data["username"]);
+
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Login successful!")),
       );
 
-      // ✅ Navigate to home screen (you can replace with your main page)
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.push(context,MaterialPageRoute(builder: (context) => HomePage() ,));
 
     } on FirebaseAuthException catch (e) {
       String message = "Login failed";
@@ -90,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 16),
 
-            // 🔒 Password field
+      
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
@@ -110,7 +126,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 24),
 
-            // 🚀 Login Button
             ElevatedButton(
               onPressed: _loading ? null : login,
               style: ElevatedButton.styleFrom(
@@ -124,7 +139,6 @@ class _LoginPageState extends State<LoginPage> {
 
             const SizedBox(height: 16),
 
-            // 🔗 Navigate to Register Page
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
