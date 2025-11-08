@@ -1,4 +1,7 @@
 
+
+import 'package:intl/intl.dart';
+
 class LeaveRequest {
   String name;
   String type;
@@ -20,4 +23,20 @@ class LeaveRequest {
     required this.status,
 
   });
+
+   Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'start': DateFormat('dd MMM yyyy').format(startDate),
+      'end': DateFormat('dd MMM yyyy').format(endDate),
+      'type': type,
+      'duration': duration,
+      'description': description,
+      'id': id,
+      'status': status,
+    };
+  }
+  
+ 
 }
+
