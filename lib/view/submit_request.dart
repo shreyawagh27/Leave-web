@@ -255,9 +255,11 @@ class _MyWidgetState extends State<MyWidget> {
                   );
                   return;
                 }
-
+                //get email and username from sharedperfernces
+                String email = "martin@gmail.com";
+                String username = "martin";
                 LeaveRequest leaveRequest = LeaveRequest(
-                  name: 'shreya',
+                  name: username,
                   type: selectedLeaveType!,
                   duration: selectedDurationType!,
                   startDate: DateFormat('dd MMM yyyy').parse(selectedDate!),
@@ -269,12 +271,15 @@ class _MyWidgetState extends State<MyWidget> {
 
                 log(leaveRequest.toMap().toString());
                 // Add to Firestore
+                
                 DocumentReference docRef = await FirebaseFirestore.instance
                     .collection("leave_request")
                     .add(leaveRequest.toMap());
 
                 // Update document with its own ID
                 await docRef.update({'id': docRef.id});
+
+                await FirebaseFirestore.instance.collection("user_data").doc(email).update({"requestid":docRef.id});
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

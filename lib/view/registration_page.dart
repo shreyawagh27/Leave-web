@@ -1,6 +1,7 @@
 
-import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -38,10 +39,14 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       setState(() => _loading = true);
 
+      
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      //firestore call
+      await FirebaseFirestore.instance.collection("user_data").doc(email).set({"username":"Newusername"});
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Registration successful!")),
@@ -54,7 +59,8 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? "Registration failed")),
       );
-    } finally {
+    }
+    finally {
       setState(() => _loading = false);
     }
   }
