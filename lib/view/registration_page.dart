@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'login_page.dart';
+
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -217,6 +219,24 @@ class _RegisterPageState extends State<RegisterPage> {
               child: _loading
                   ? const CircularProgressIndicator(color: Colors.white)
                   : const Text("Register"),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text("Back to Login "),
+                TextButton(
+                  
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginPage(),
+                      ),
+                    );
+                  },
+                  child: const Text("Login"),
+                ),
+              ],
             ),
           ],
         ),

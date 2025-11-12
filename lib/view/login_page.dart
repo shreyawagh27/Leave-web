@@ -7,6 +7,7 @@ import 'package:flutter_application_1/view/navigator_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'admin_homepage.dart';
+import 'registration_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -206,7 +207,12 @@ class _LoginPageState extends State<LoginPage> {
                 const Text("Don't have an account? "),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/register');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RegisterPage(),
+                      ),
+                    );
                   },
                   child: const Text("Register"),
                 ),
