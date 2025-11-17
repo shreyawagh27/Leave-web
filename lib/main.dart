@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_application_1/view/calender_page.dart';
 import 'package:flutter_application_1/view/navigator_page.dart';
 import 'package:flutter_application_1/view/leave_request.dart';
 
@@ -27,7 +28,7 @@ class MainApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false, 
 
-      home: LoginPage(),
+      home: LeaveRequestPage(),
       
 
     );
