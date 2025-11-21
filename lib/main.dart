@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_application_1/view/home_page.dart';
+import 'package:flutter_application_1/view/navigator_page.dart';
 import 'package:flutter_application_1/view/leave_request.dart';
 
 
-import 'view/home_page.dart';
+import 'view/admin_homepage.dart';
+import 'view/navigator_page.dart';
 import 'view/login_page.dart';
 import 'view/registration_page.dart';
 import 'view/submit_request.dart'; 
@@ -26,7 +27,7 @@ class MainApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false, 
 
-      home: LoginPage(),
+      home: AdminHomePage(),
       
 
     );

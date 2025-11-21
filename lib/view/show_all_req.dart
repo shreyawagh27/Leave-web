@@ -48,6 +48,7 @@ class DashboardPageState extends State<DashboardPage> {
           endDate: format.parse(map['end']),
           description: map['description'] ?? '',
           status: map['status'] ?? 'Pending',
+          total: map ['total'] ?? 'Day',
         );
 
         allLeaveRequests.add(leaveRequest);

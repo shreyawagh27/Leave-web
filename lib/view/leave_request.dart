@@ -53,6 +53,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
         endDate: format.parse(map['end']),
         description: map['description'] ?? '',
         status: map ['status'] ?? 'Pending',
+        total: map ['total'] ?? 'Day',
       );
 
       

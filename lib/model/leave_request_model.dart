@@ -11,6 +11,7 @@ class LeaveRequest {
   String description;
   String status;
   String id;
+  String total;
 
   LeaveRequest({
     required this.name,
@@ -21,6 +22,7 @@ class LeaveRequest {
     required this.description,
     required this.id,
     required this.status,
+    required this.total,
 
   });
 
@@ -34,6 +36,7 @@ class LeaveRequest {
       'description': description,
       'id': id,
       'status': status,
+      'total': total,
     };
   }
   
