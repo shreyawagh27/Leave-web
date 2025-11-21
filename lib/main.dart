@@ -5,12 +5,14 @@ import 'package:flutter_application_1/view/navigator_page.dart';
 import 'package:flutter_application_1/view/leave_request.dart';
 
 
+import 'view/admin_homepage.dart';
 import 'view/show_all_req.dart';
 import 'view/navigator_page.dart';
 import 'view/login_page.dart';
 import 'view/registration_page.dart';
 import 'view/submit_request.dart'; 
 import 'view/leave_request.dart';
+import 'view/user_homepage.dart';
 
 
 void main() async {
@@ -28,7 +30,7 @@ class MainApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false, 
 
-      home: LeaveRequestPage(),
+      home: AdminHomePage(),
       
 
     );
