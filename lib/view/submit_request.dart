@@ -1,5 +1,4 @@
 import 'dart:developer';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/model/leave_request_model.dart';
@@ -18,8 +17,8 @@ class _MyWidgetState extends State<MyWidget> {
   String? selectedDate;
   String? selectedEndDate;
   String? selectedDurationType;
+
   TextEditingController desController = TextEditingController();
-  int? totalDays; 
 
   final List<String> leaveType = [
     'NH/RH',
@@ -31,17 +30,6 @@ class _MyWidgetState extends State<MyWidget> {
   ];
 
   final List<String> durationType = ['Half Day', 'Full Day'];
-
-  void _calculateTotalDays() {
-    if (selectedDate != null && selectedEndDate != null) {
-      DateTime start = DateFormat('dd MMM yyyy').parse(selectedDate!);
-      DateTime end = DateFormat('dd MMM yyyy').parse(selectedEndDate!);
-      int days = end.difference(start).inDays + 1; 
-      setState(() {
-        totalDays = days;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,18 +45,26 @@ class _MyWidgetState extends State<MyWidget> {
         ),
         backgroundColor: const Color.fromARGB(255, 108, 185, 248),
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(25)),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
         ),
       ),
-      body: SingleChildScrollView(
+
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            // ===== Leave Type =====
-            _buildShadowContainer(
-              context,
-              DropdownButton<String>(
+
+            // Leave Type
+            Container(
+              width: MediaQuery.of(context).size.width,
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.black),
+              ),
+              child: DropdownButton<String>(
                 isExpanded: true,
                 underline: const SizedBox(),
                 hint: const Text(
@@ -87,12 +83,17 @@ class _MyWidgetState extends State<MyWidget> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
-            // ===== Start Date =====
-            _buildShadowContainer(
-              context,
-              InkWell(
+            // Start Date
+            Container(
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(),
+              ),
+              child: InkWell(
                 onTap: () async {
                   DateTime? datePicked = await showDatePicker(
                     context: context,
@@ -105,35 +106,37 @@ class _MyWidgetState extends State<MyWidget> {
                       selectedDate =
                           DateFormat('dd MMM yyyy').format(datePicked);
                     });
-                    _calculateTotalDays();
                   }
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.calendar_today,
-                        size: 20, color: Colors.black54),
+                    const Icon(Icons.calendar_today),
                     const SizedBox(width: 8),
                     Text(
-                      selectedDate ?? 'Start Date',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
+                      selectedDate ?? "Start Date",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    )
                   ],
                 ),
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
-            // ===== End Date =====
-            _buildShadowContainer(
-              context,
-              GestureDetector(
+            // End Date
+            Container(
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(),
+              ),
+              child: InkWell(
                 onTap: () async {
                   DateTime? start = selectedDate != null
                       ? DateFormat('dd MMM yyyy').parse(selectedDate!)
-                      : DateTime(1970);
+                      : DateTime.now();
 
                   DateTime? datePicked = await showDatePicker(
                     context: context,
@@ -147,49 +150,34 @@ class _MyWidgetState extends State<MyWidget> {
                       selectedEndDate =
                           DateFormat('dd MMM yyyy').format(datePicked);
                     });
-                    _calculateTotalDays();
                   }
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.calendar_today,
-                        size: 20, color: Colors.black54),
+                    const Icon(Icons.calendar_today),
                     const SizedBox(width: 8),
                     Text(
-                      selectedEndDate ?? 'End Date',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
+                      selectedEndDate ?? "End Date",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    )
                   ],
                 ),
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
-            // ===== Total Days =====
-            if (totalDays != null)
-              _buildShadowContainer(
-                context,
-                Center(
-                  child: Text(
-                    'Total Days: $totalDays',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
+            // Duration
+            Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.black),
               ),
-
-            const SizedBox(height: 16),
-
-            // ===== Duration Type =====
-            _buildShadowContainer(
-              context,
-              DropdownButton<String>(
+              child: DropdownButton<String>(
                 isExpanded: true,
                 underline: const SizedBox(),
                 hint: const Text(
@@ -208,136 +196,102 @@ class _MyWidgetState extends State<MyWidget> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
-            // ===== Description =====
-            _buildShadowContainer(
-              context,
-              TextField(
+            // Description
+            Container(
+              height: 80,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.black),
+              ),
+              child: TextField(
                 controller: desController,
                 maxLines: 3,
                 decoration: const InputDecoration(
-                  hintText: 'Briefly describe your reason...',
                   border: InputBorder.none,
-                  hintStyle: TextStyle(color: Colors.black54),
+                  hintText: "Briefly describe your reason...",
                 ),
               ),
-              height: 80,
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            // ===== Submit Button =====
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () async {
-                  if (selectedLeaveType == null || selectedLeaveType!.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please select a leave type'),
-                      ),
-                    );
-                    return;
-                  }
-                  if (selectedDurationType == null ||
-                      selectedDurationType!.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please select a Duration')),
-                    );
-                    return;
-                  }
-                  if (desController.text.trim().isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please enter a description'),
-                      ),
-                    );
-                    return;
-                  }
-
-                  final prefs = await SharedPreferences.getInstance();
-                  String email = prefs.getString('email') ?? '';
-                  String username = prefs.getString('username') ?? '';
-
-                  LeaveRequest leaveRequest = LeaveRequest(
-                    name: username,
-                    type: selectedLeaveType!,
-                    duration: selectedDurationType!,
-                    startDate: DateFormat('dd MMM yyyy').parse(selectedDate!),
-                    endDate: DateFormat('dd MMM yyyy').parse(selectedEndDate!),
-                    description: desController.text,
-                    id: '',
-                    status: 'Pending',
-                    total: '$totalDays',
-                  );
-
-                  log(leaveRequest.toMap().toString());
-
-                  DocumentReference docRef = await FirebaseFirestore.instance
-                      .collection("leave_request")
-                      .add(leaveRequest.toMap());
-
-                  await docRef.update({'id': docRef.id});
-                  await FirebaseFirestore.instance
-                      .collection("user_data")
-                      .doc(email)
-                      .update({"requestid": docRef.id});
-
+            FilledButton(
+              onPressed: () async {
+                if (selectedLeaveType == null ||
+                    selectedDurationType == null ||
+                    selectedDate == null ||
+                    selectedEndDate == null ||
+                    desController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Leave request submitted successfully! (ID: ${docRef.id})',
-                      ),
-                    ),
+                    const SnackBar(
+                        content: Text("Please fill all required fields")),
                   );
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF4285F4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                  return;
+                }
+
+                // Fetch user data
+                final prefs = await SharedPreferences.getInstance();
+                String email = prefs.getString('email') ?? '';
+                String username = prefs.getString('username') ?? '';
+
+                // Calculate total days
+                DateTime s = DateFormat('dd MMM yyyy').parse(selectedDate!);
+                DateTime e = DateFormat('dd MMM yyyy').parse(selectedEndDate!);
+                int totalDays = e.difference(s).inDays + 1;
+
+                LeaveRequest leaveRequest = LeaveRequest(
+                  name: username,
+                  type: selectedLeaveType!,
+                  duration: selectedDurationType!,
+                  startDate: s,
+                  endDate: e,
+                  description: desController.text,
+                  id: '',
+                  status: 'Pending',
+                  total: totalDays.toString(),
+                );
+
+                log(leaveRequest.toMap().toString());
+
+                // Add to Firestore
+                DocumentReference docRef = await FirebaseFirestore.instance
+                    .collection("leave_request")
+                    .add(leaveRequest.toMap());
+
+                await docRef.update({'id': docRef.id});
+
+                FirebaseFirestore.instance
+                    .collection("user_data")
+                    .doc(email)
+                    .update({"requestid": docRef.id});
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                        "Leave request submitted successfully! ID: ${docRef.id}"),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text(
-                  'Submit Request',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
+                );
+              },
+
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 130, vertical: 14),
+              ),
+
+              child: const Text(
+                "Submit Request",
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildShadowContainer(
-    BuildContext context,
-    Widget child, {
-    double height = 50,
-  }) {
-    return Container(
-      width: MediaQuery.of(context).size.width,
-      height: height,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black12),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 6,
-            offset: Offset(2, 2),
-          ),
-        ],
-      ),
-      alignment: Alignment.center,
-      child: child,
     );
   }
 }

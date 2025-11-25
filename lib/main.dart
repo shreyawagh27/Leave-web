@@ -10,6 +10,7 @@ import 'view/login_page.dart';
 import 'view/registration_page.dart';
 import 'view/submit_request.dart'; 
 import 'view/leave_request.dart';
+import 'view/user_homepage.dart';
 
 
 void main() async {

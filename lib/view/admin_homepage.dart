@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 class AdminHomePage extends StatefulWidget {
@@ -8,291 +9,96 @@ class AdminHomePage extends StatefulWidget {
 }
 
 class _AdminHomePageState extends State<AdminHomePage> {
-  int totalUsers = 24;
+  final String adminDocId = "admin@gmail.com";
+
+  int totalUsers = 5;
   int pendingLeaves = 5;
   int approvedLeaves = 18;
-  int yearlyHolidays = 12;
 
-  final List<String> days = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday'
+  List<String> totalUserList = [
+    "Sanket",
+    "Shreya",
+    "Arati",
+    "Vaishnavi",
+    "Siddharth",
   ];
 
-  final List<String> yearlyHolidayList = [
-    'Planned Leave',
-    'Unplanned Leave',
-    'Sick Leave',
-    'Emergency Leave',
-    'NH/RH Leave',
-    'Compensatory Leave',
+  List<String> days = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
   ];
 
   List<String> selectedDays = ["Saturday", "Sunday"];
 
-  bool showDays = false;
+  List<Map<String, dynamic>> yearlyHolidayList = [
+    {"name": "Sick Leave", "days": 6},
+    {"name": "Emergency Leave", "days": 6},
+    {"name": "Unpaid Leave", "days": 0},
+    {"name": "Planned Leave", "days": 12},
+  ];
 
-  List<String> selectedHolidays = [];
-  bool showHolidays = false;
+  int get totalLeaveDays {
+    int total = 0;
+    for (var item in yearlyHolidayList) {
+      total += item["days"] as int;
+    }
+    return total;
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text("Admin Dashboard"),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+  final List<Map<String, String>> _holidays = [
+    {"name": "Republic Day", "date": "26 Jan 2025", "day": "Sunday"},
+    {"name": "Holi", "date": "29 Mar 2025", "day": "Saturday"},
+    {"name": "Independence Day", "date": "15 Aug 2025", "day": "Friday"},
+    {"name": "Diwali", "date": "20 Oct 2025", "day": "Monday"},
+    {"name": "Christmas", "date": "25 Dec 2025", "day": "Thursday"},
+  ];
+
+  int holidayIndex = 0;
+
+  void nextHoliday() => setState(() {
+        holidayIndex = (holidayIndex + 1) % _holidays.length;
+      });
+
+  void prevHoliday() => setState(() {
+        holidayIndex =
+            (holidayIndex - 1 + _holidays.length) % _holidays.length;
+      });
+
+
+  Widget _buildDashboardCard({
+    required Color color,
+    required IconData icon,
+    required String value,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(18),
+        ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 20),
-
-            Row(
-              children: [
-                Expanded(
-                  child: Card(
-                    color: Colors.blue.shade100,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.people_alt_outlined,
-                              size: 36, color: Colors.black54),
-                          const SizedBox(height: 8),
-                          Text(
-                            totalUsers.toString(),
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Text(
-                            "Total Employees",
-                            style:
-                                TextStyle(fontSize: 14, color: Colors.black54),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Card(
-                    color: Colors.orange.shade100,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.pending_actions_outlined,
-                              size: 36, color: Colors.black54),
-                          const SizedBox(height: 8),
-                          Text(
-                            pendingLeaves.toString(),
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Text(
-                            "Pending Leave Requests",
-                            textAlign: TextAlign.center,
-                            style:
-                                TextStyle(fontSize: 14, color: Colors.black54),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            Icon(icon, size: 28, color: Colors.black87),
+            const SizedBox(height: 8),
+            FittedBox(
+              child: Text(value,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
             ),
-
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                Expanded(
-                  child: Card(
-                    color: Colors.green.shade100,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.verified_outlined,
-                              size: 36, color: Colors.black54),
-                          const SizedBox(height: 8),
-                          Text(
-                            approvedLeaves.toString(),
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Text(
-                            "Approved Leaves",
-                            style:
-                                TextStyle(fontSize: 14, color: Colors.black54),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Card(
-                    color: Colors.purple.shade100,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.holiday_village_outlined,
-                              size: 36, color: Colors.black54),
-                          const SizedBox(height: 8),
-                          Text(
-                            yearlyHolidays.toString(),
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Text(
-                            "Yearly Holidays",
-                            style:
-                                TextStyle(fontSize: 14, color: Colors.black54),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              _showYearlyHolidays(context);
-                            },
-                            child: const Icon(Icons.add,
-                                size: 30, color: Colors.black),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-
-            Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.teal.shade200, width: 1.2),
-              ),
-              color: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              "Weekly Off",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-
-                           
-                            Text(
-                              selectedDays.join(", "),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.teal,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        IconButton(
-                          icon: Icon(
-                            showDays
-                                ? Icons.keyboard_arrow_up
-                                : Icons.keyboard_arrow_down,
-                            color: Colors.teal,
-                            size: 28,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              showDays = !showDays;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-
-                    if (showDays)
-                      Column(
-                        children: days.map((day) {
-                          return CheckboxListTile(
-                            title: Text(day),
-                            value: selectedDays.contains(day),
-                            onChanged: (bool? value) {
-                              setState(() {
-                                if (value == true) {
-                                  selectedDays.add(day);
-                                } else {
-                                  selectedDays.remove(day);
-                                }
-                              });
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    "Weekly off updated: ${selectedDays.join(', ')}",
-                                  ),
-                                  backgroundColor: Colors.green.shade600,
-                                  behavior: SnackBarBehavior.floating,
-                                  duration: const Duration(seconds: 2),
-                                ),
-                              );
-                            },
-                          );
-                        }).toList(),
-                      ),
-                  ],
-                ),
-              ),
+            FittedBox(
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 13, color: Colors.black54)),
             ),
           ],
         ),
@@ -300,50 +106,337 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  void _showYearlyHolidays(BuildContext context) {
+
+  void _showEmployeeList(BuildContext context) {
+    TextEditingController empCtrl = TextEditingController();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.6,
-          minChildSize: 0.4,
-          maxChildSize: 0.95,
-          builder: (_, controller) {
-            return Padding(
-              padding: const EdgeInsets.all(16),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheet) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.75,
               child: Column(
                 children: [
-                  const Text(
-                    "Yearly Holidays",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Total Employees",
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
+                      IconButton(
+                        icon: const Icon(Icons.add_circle,
+                            color: Colors.teal, size: 30),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text("Add Employee"),
+                              content: TextField(
+                                controller: empCtrl,
+                                decoration: const InputDecoration(
+                                  labelText: "Name",
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context),
+                                    child: const Text("Cancel")),
+                                TextButton(
+                                    onPressed: () {
+                                      if (empCtrl.text.isNotEmpty) {
+                                        setSheet(() {
+                                          totalUserList
+                                              .add(empCtrl.text.trim());
+                                          totalUsers =
+                                              totalUserList.length;
+                                        });
+                                        setState(() {});
+                                        empCtrl.clear();
+                                        Navigator.pop(context);
+                                      }
+                                    },
+                                    child: const Text("Add")),
+                              ],
+                            ),
+                          );
+                        },
+                      )
+                    ],
                   ),
-                  const SizedBox(height: 12),
-
                   Expanded(
                     child: ListView.builder(
-                      controller: controller,
-                      itemCount: yearlyHolidayList.length,
-                      itemBuilder: (context, index) {
-                        final String holiday = yearlyHolidayList[index];
-
-                        return ListTile(
-                          leading: const Icon(Icons.event),
-                          title: Text(holiday),
+                      itemCount: totalUserList.length,
+                      itemBuilder: (_, index) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.person, color: Colors.teal),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(totalUserList[index],
+                                    style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.red),
+                                onPressed: () {
+                                  setSheet(() {
+                                    totalUserList.removeAt(index);
+                                    totalUsers = totalUserList.length;
+                                  });
+                                  setState(() {});
+                                },
+                              )
+                            ],
+                          ),
                         );
                       },
                     ),
-                  ),
+                  )
                 ],
               ),
-            );
-          },
-        );
-      },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+
+  void _showWeeklyOffSelector(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheet) {
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Column(
+                children: [
+                  const Text("Select Weekly Off",
+                      style: TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: ListView(
+                      children: days.map((day) {
+                        final isSelected = selectedDays.contains(day);
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(day,
+                                    style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                              Checkbox(
+                                value: isSelected,
+                                onChanged: (v) {
+                                  setSheet(() {
+                                    if (v == true) {
+                                      selectedDays.add(day);
+                                    } else {
+                                      selectedDays.remove(day);
+                                    }
+                                  });
+                                  setState(() {});
+                                },
+                              )
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final h = _holidays[holidayIndex];
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        title: const Text("Admin Dashboard",
+            style: TextStyle(
+                color: Colors.black87, fontWeight: FontWeight.bold)),
+        centerTitle: true,
+      ),
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            // FIRST ROW
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    SizedBox(
+                      width: constraints.maxWidth / 3 - 10,
+                      child: _buildDashboardCard(
+                        color: Colors.blue.shade100,
+                        icon: Icons.people_alt_outlined,
+                        value: totalUsers.toString(),
+                        label: "Total Employees",
+                        onTap: () => _showEmployeeList(context),
+                      ),
+                    ),
+                    SizedBox(
+                      width: constraints.maxWidth / 3 - 10,
+                      child: _buildDashboardCard(
+                        color: Colors.orange.shade100,
+                        icon: Icons.pending_actions_outlined,
+                        value: pendingLeaves.toString(),
+                        label: "Pending Leaves",
+                      ),
+                    ),
+                    SizedBox(
+                      width: constraints.maxWidth / 3 - 10,
+                      child: _buildDashboardCard(
+                        color: Colors.green.shade100,
+                        icon: Icons.verified_outlined,
+                        value: approvedLeaves.toString(),
+                        label: "Approved Leaves",
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            // SECOND ROW
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    SizedBox(
+                      width: constraints.maxWidth / 3 - 10,
+                      child: _buildDashboardCard(
+                        color: Colors.purple.shade100,
+                        icon: Icons.holiday_village,
+                        value: totalLeaveDays.toString(),
+                        label: "Yearly Holidays",
+                        onTap: () => _showWeeklyOffSelector(context),
+                      ),
+                    ),
+                    SizedBox(
+                      width: constraints.maxWidth / 3 - 10,
+                      child: _buildDashboardCard(
+                        color: Colors.teal.shade100,
+                        icon: Icons.event_available,
+                        value: "8",
+                        label: "Used Leaves",
+                      ),
+                    ),
+                    SizedBox(
+                      width: constraints.maxWidth / 3 - 10,
+                      child: _buildDashboardCard(
+                        color: Colors.indigo.shade100,
+                        icon: Icons.calendar_today,
+                        value: selectedDays.join(", "),
+                        label: "Weekly Off",
+                        onTap: () => _showWeeklyOffSelector(context),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+            const SizedBox(height: 20),
+
+            
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFE3F2FD), Color(0xFFEDE7F6)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  const Text(" National Holidays",
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueAccent)),
+                  const SizedBox(height: 10),
+                  Text(h["name"]!,
+                      style: const TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.bold)),
+                  Text("${h['date']} • ${h['day']}",
+                      style: const TextStyle(
+                          fontSize: 13, color: Colors.black54)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                          icon: const Icon(Icons.arrow_back_ios),
+                          onPressed: prevHoliday),
+                      IconButton(
+                          icon: const Icon(Icons.arrow_forward_ios),
+                          onPressed: nextHoliday),
+                    ],
+                  )
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 25),
+          ],
+        ),
+      ),
     );
   }
 }

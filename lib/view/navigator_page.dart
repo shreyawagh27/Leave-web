@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'show_all_req.dart';
+import 'admin_homepage.dart';
 import 'leave_request.dart';
-import 'submit_request.dart'; 
+import 'submit_request.dart';
+import 'user_homepage.dart'; 
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,8 +16,20 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
+String usertype = "Admin";
+  void getdata(BuildContext context)async{
+   final pref = await SharedPreferences.getInstance();
+   usertype= pref.getString("usertype")!;
+   _pages[0]= usertype == "User" ? UserHomePage(): AdminHomePage();
+   setState(() {
+     
+   });
+  }
   
-  final List<Widget> _pages = const [
+  // condition ?   statment1 : statment2 
+
+   final List<Widget> _pages = [
+   UserHomePage(),
     DashboardPage(),
     MyWidget(),
     LeaveRequestPage(),
@@ -24,6 +39,13 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getdata(context);
   }
 
   @override
@@ -45,6 +67,10 @@ class _HomePageState extends State<HomePage> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.list_alt),
+            label: 'History',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.edit_calendar),
             label: 'Apply Leave',
           ),
@@ -58,4 +84,3 @@ class _HomePageState extends State<HomePage> {
   }
 
 }
-

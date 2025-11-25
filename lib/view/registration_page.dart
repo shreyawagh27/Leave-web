@@ -1,7 +1,8 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import 'login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -14,9 +15,13 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   bool _loading = false;
+
+  final List<String> usertype = ['Admin', 'User'];
+  String? selectedusertype;
 
   Future<void> register() async {
     final username = _usernameController.text.trim();
@@ -24,35 +29,47 @@ class _RegisterPageState extends State<RegisterPage> {
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (username.isEmpty||  email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (username.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please fill all fields")));
+      return;
+    }
+
+    if (selectedusertype == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields")),
+        const SnackBar(content: Text("Please select a user type")),
       );
       return;
     }
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Passwords do not match")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
       return;
     }
 
     try {
       setState(() => _loading = true);
 
-      
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
       //firestore call
-      await FirebaseFirestore.instance.collection("user_data").doc(email).set({"username":username});
+      await FirebaseFirestore.instance.collection("user_data").doc(email).set({
+        "username": username,
+        "usertype": selectedusertype,
+      });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Registration successful!")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Registration successful!")));
       _usernameController.clear();
       _emailController.clear();
       _passwordController.clear();
@@ -61,8 +78,7 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? "Registration failed")),
       );
-    }
-    finally {
+    } finally {
       setState(() => _loading = false);
     }
   }
@@ -71,10 +87,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text("Register"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Register"), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -97,7 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
             const SizedBox(height: 16),
-          
+
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
@@ -116,8 +129,6 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             const SizedBox(height: 16),
 
-
-            
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
@@ -137,7 +148,6 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             const SizedBox(height: 16),
 
-            
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
@@ -155,7 +165,50 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.person,
+                    color: Color.fromARGB(255, 45, 45, 45),
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      underline: const SizedBox(),
+                      hint: const Text(
+                        'Select User Type',
+                        style: TextStyle(
+                          fontWeight: FontWeight.normal,
+                          fontSize: 16,
+                          color: Color.fromARGB(255, 45, 45, 45),
+                        ),
+                      ),
+                      value: selectedusertype,
+                      items: usertype.map((type) {
+                        return DropdownMenuItem(value: type, child: Text(type));
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedusertype = value!;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 26),
 
             ElevatedButton(
               onPressed: _loading ? null : register,
@@ -167,10 +220,27 @@ class _RegisterPageState extends State<RegisterPage> {
                   ? const CircularProgressIndicator(color: Colors.white)
                   : const Text("Register"),
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text("Back to Login "),
+                TextButton(
+                  
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginPage(),
+                      ),
+                    );
+                  },
+                  child: const Text("Login"),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 }
-
