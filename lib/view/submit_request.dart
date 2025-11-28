@@ -6,14 +6,14 @@ import 'package:flutter_application_1/model/leave_request_model.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class MyWidget extends StatefulWidget {
-  const MyWidget({super.key});
+class SubmitRequest extends StatefulWidget {
+  const SubmitRequest({super.key});
 
   @override
-  State<MyWidget> createState() => _MyWidgetState();
+  State<SubmitRequest> createState() => _SubmitRequestState();
 }
 
-class _MyWidgetState extends State<MyWidget> {
+class _SubmitRequestState extends State<SubmitRequest> {
   String? selectedLeaveType;
   String? selectedDate;
   String? selectedEndDate;

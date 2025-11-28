@@ -28,7 +28,7 @@ class MainApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false, 
 
-      home: LeaveRequestPage(),
+      home: LoginPage(),
       
 
     );
