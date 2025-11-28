@@ -61,7 +61,7 @@ class _RegisterPageState extends State<RegisterPage> {
         password: password,
       );
 
-      //firestore call
+    
       await FirebaseFirestore.instance.collection("user_data").doc(email).set({
         "username": username,
         "usertype": selectedusertype,

@@ -1,181 +1,299 @@
+import 'dart:developer';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserHomePage extends StatefulWidget {
-  const UserHomePage ({super.key});
+  const UserHomePage({super.key});
 
   @override
-  State<UserHomePage > createState() => _UserHomePageState();
+  State<UserHomePage> createState() => _UserHomePageState();
 }
 
 class _UserHomePageState extends State<UserHomePage> {
-  int totalUsers = 24;
-  int pendingLeaves = 5;
-  int approvedLeaves = 18;
-  int yearlyHolidays = 12;
+  final String adminDocId = "admin@gmail.com";
+  final String userEmail = "user@gmail.com";
+
+  bool showHolidays = false;
+
+  int pending = 0, approved = 0, rejected = 0, totalBalance = 0;
+
+  List<String> weeklyOff = [];
+  List<Map<String, dynamic>> leaveTypes = [];
+  List<Map<String, dynamic>> holidays = [];
+  Map<String, int> usedLeaveTypeCount = {};
+
+  @override
+  void initState() {
+    super.initState();
+    loadAllData();
+  }
+
+  Future<void> loadAllData() async {
+    await fetchLeaveTypes();
+    await fetchWeeklyOff();
+    await fetchLeaveCounts();
+    //await fetchHolidays();
+    await fetchLeaveBalance();
+    setState(() {});
+  }
+
+  Future<void> fetchLeaveCounts() async {
+    SharedPreferences pref = await SharedPreferences.getInstance();
+    String userEmail = pref.getString("email") ?? " ";
+
+    final snap = await FirebaseFirestore.instance
+        .collection("leave_request")
+        .where("email", isEqualTo: userEmail)
+        .get();
+
+    pending = 0;
+    approved = 0;
+    rejected = 0;
+    for (int i = 0; i < snap.docs.length; i++) {
+      final doc = snap.docs[i];
+      final status = doc["status"];
+      if (status == "Pending") {
+        pending++;
+      } else if (status == "Approved") {
+        approved++;
+      } else if (status == "Rejected") {
+        rejected++;
+      }
+      if (status == 'Approved') {
+        final type = doc['type'];
+        int dayCount = 1;
+        try {
+           dayCount = doc['dayCount'];
+        }catch (e){
+        print(e);
+        }
+        
+        usedLeaveTypeCount[type] = (usedLeaveTypeCount[type] ?? 0) + dayCount;
+      }
+    }
+  }
+
+  Future<void> fetchLeaveTypes() async {
+    final doc = await FirebaseFirestore.instance
+        .collection("admin_data")
+        .doc(adminDocId)
+        .get();
+
+    leaveTypes = List<Map<String, dynamic>>.from(
+      doc.data()?["leave_types"] ?? [],
+    );
+    holidays = List<Map<String, dynamic>>.from(
+      doc.data()?["national_holiday"] ?? [],
+    );
+  }
+
+  Future<void> fetchWeeklyOff() async {
+    final doc = await FirebaseFirestore.instance
+        .collection("admins")
+        .doc(adminDocId)
+        .get();
+
+    weeklyOff = List<String>.from(doc.data()?["weeklyOff"] ?? []);
+  }
+
+  Future<void> fetchLeaveBalance() async {
+    totalBalance = 0;
+
+    for (int i = 0; i < leaveTypes.length; i++) {
+      String leaveName = leaveTypes[i]["name"];
+      int allowed = leaveTypes[i]["days"];
+      int usedCount = usedLeaveTypeCount[leaveName]?? 0;
+      log('leaveType: $leaveName   allowed:  $allowed   used: $usedCount  ');
+      final snap = await FirebaseFirestore.instance
+          .collection("leave_request")
+          .where("email", isEqualTo: userEmail)
+          // .where("type", isEqualTo: leaveName)
+          .where("status", isEqualTo: "Approved")
+          .get();
+
+      int used = snap.docs.length;
+      totalBalance += (allowed - used);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text("User Dashboard"),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      appBar: AppBar(title: const Text("User Dashboard"), centerTitle: true),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const SizedBox(height: 20),
-
-            
             Row(
               children: [
-                Expanded(
-                  child: Card(
-                    color: Colors.blue.shade100,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.people_alt_outlined,
-                              size: 36, color: Colors.black54),
-                          const SizedBox(height: 8),
-                          Text(
-                            totalUsers.toString(),
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Text(
-                            "Total Employees",
-                            style:
-                                TextStyle(fontSize: 14, color: Colors.black54),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                statusBox(
+                  "Pending",
+                  Icons.pending_actions_outlined,
+                  Colors.orange.shade100,
+                  pending,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Card(
-                    color: Colors.orange.shade100,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.pending_actions_outlined,
-                              size: 36, color: Colors.black54),
-                          const SizedBox(height: 8),
-                          Text(
-                            pendingLeaves.toString(),
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Text(
-                            "Pending Leave Requests",
-                            textAlign: TextAlign.center,
-                            style:
-                                TextStyle(fontSize: 14, color: Colors.black54),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                const SizedBox(width: 12),
+                statusBox(
+                  "Approved",
+                  Icons.verified,
+                  Colors.green.shade100,
+                  approved,
                 ),
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-          
             Row(
               children: [
-                Expanded(
-                  child: Card(
-                    color: Colors.green.shade100,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.verified_outlined,
-                              size: 36, color: Colors.black54),
-                          const SizedBox(height: 8),
-                          Text(
-                            approvedLeaves.toString(),
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Text(
-                            "Approved Leaves",
-                            style:
-                                TextStyle(fontSize: 14, color: Colors.black54),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                statusBox(
+                  "Rejected",
+                  Icons.cancel,
+                  Colors.red.shade100,
+                  rejected,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Card(
-                    color: Colors.purple.shade100,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.holiday_village_outlined,
-                              size: 36, color: Colors.black54),
-                          const SizedBox(height: 8),
-                          Text(
-                            yearlyHolidays.toString(),
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Text(
-                            "Yearly Holidays",
-                            style:
-                                TextStyle(fontSize: 14, color: Colors.black54),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                const SizedBox(width: 12),
+                statusBox(
+                  "Leave Balance",
+                  Icons.event_available,
+                  Colors.purple.shade100,
+                  totalBalance,
                 ),
               ],
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 25),
 
-          
-           
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Weekly Off",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                weeklyOff.join(", "),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 25),
+
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Leave Types",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            Column(
+              children: List.generate(leaveTypes.length, (i) {
+                String name = leaveTypes[i]["name"];
+                int allowed = leaveTypes[i]["days"];
+
+                return Card(
+                  child: ListTile(
+                    title: Text(name),
+                    subtitle: Text(
+                      "Allowed: $allowed",
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+
+            const SizedBox(height: 25),
+
+            GestureDetector(
+              onTap: () => setState(() => showHolidays = !showHolidays),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Text(
+                      "National Holidays",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      showHolidays
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      size: 26,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            if (showHolidays)
+              Column(
+                children: List.generate(holidays.length, (i) {
+                  final date = holidays[i]["date"].toDate();
+                  return Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.event),
+                      title: Text(holidays[i]["name"]),
+                      subtitle: Text("${date.day}-${date.month}-${date.year}"),
+                    ),
+                  );
+                }),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget statusBox(String label, IconData icon, Color color, int value) {
+    return Expanded(
+      child: Container(
+        height: 90,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(height: 5),
+            Text(
+              value.toString(),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Text(label, style: const TextStyle(fontSize: 12)),
           ],
         ),
       ),

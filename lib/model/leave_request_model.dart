@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 class LeaveRequest {
   String name;
   String type;
+  String email;
   String duration;
   DateTime startDate;
   DateTime endDate;
@@ -15,6 +16,7 @@ class LeaveRequest {
   LeaveRequest({
     required this.name,
     required this.type,
+    required this.email,
     required this.duration,
     required this.startDate,
     required this.endDate,
@@ -34,6 +36,7 @@ class LeaveRequest {
       'description': description,
       'id': id,
       'status': status,
+      'email': email,
     };
   }
   

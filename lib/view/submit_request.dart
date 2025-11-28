@@ -88,7 +88,7 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
             const SizedBox(height: 10),
 
-            // Start Date Picker
+            
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -264,6 +264,7 @@ class _SubmitRequestState extends State<SubmitRequest> {
                 LeaveRequest leaveRequest = LeaveRequest(
                   name: username,
                   type: selectedLeaveType!,
+                  email: email,
                   duration: selectedDurationType!,
                   startDate: DateFormat('dd MMM yyyy').parse(selectedDate!),
                   endDate: DateFormat('dd MMM yyyy').parse(selectedEndDate!),
