@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
-import 'show_all_req.dart';
-import 'admin_homepage.dart';
-import 'leave_request.dart';
+import 'leave_request_admin.dart';
+import 'show_all_req_admin_side.dart';
+import 'show_all_req_user_side.dart';
+
+import 'admin_dashboard_page.dart';
+import 'leave_request_admin.dart';
 import 'submit_request.dart';
-import 'user_homepage.dart';
+import 'user_dashboard_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -38,11 +41,11 @@ class _HomePageState extends State<HomePage> {
   ];
 
   final List<Widget> adminPages = [
-    AdminHomePage(),
-    LeaveRequestPage(), 
-    HistoryPage(), 
-  ];
-
+  AdminHomePage(),
+  LeaveRequestPage(),     
+  ShowAllReqPage(),    
+    
+];
   final List<BottomNavigationBarItem> adminNavItems = const [
     BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: "Dashboard"),
     BottomNavigationBarItem(

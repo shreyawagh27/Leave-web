@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/view/navigator_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'admin_homepage.dart';
+import 'admin_dashboard_page.dart';
 import 'registration_page.dart';
 
 class LoginPage extends StatefulWidget {
