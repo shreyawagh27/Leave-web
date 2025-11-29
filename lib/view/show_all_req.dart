@@ -6,14 +6,14 @@ import 'package:intl/intl.dart';
 
 import '../model/leave_request_model.dart';
 
-class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+class HistoryPage extends StatefulWidget {
+  const HistoryPage({super.key});
 
   @override
-  State<DashboardPage> createState() => DashboardPageState();
+  State<HistoryPage> createState() => HistoryPageState();
 }
 
-class DashboardPageState extends State<DashboardPage> {
+class HistoryPageState extends State<HistoryPage> {
   List<LeaveRequest> allLeaveRequests = [];
   bool isLoading = true;
 
