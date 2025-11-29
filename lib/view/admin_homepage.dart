@@ -10,7 +10,7 @@ class AdminHomePage extends StatefulWidget {
 }
 
 class _AdminHomePageState extends State<AdminHomePage> {
-  // Use this doc id as provided
+ 
   final String adminDocId = "admin@gmail.com";
 
   // Dashboard values (defaults)
@@ -18,7 +18,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   int pendingLeaves = 5;
   int approvedLeaves = 18;
 
-  List<String> totalUserList = [
+  List  totalUserList = [
     "Sanket",
     "Shreya",
     "Arati",
@@ -38,7 +38,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   List<String> selectedDays = ["Saturday", "Sunday"];
 
-  // YEARLY LEAVES
+  
   List<Map<String, dynamic>> yearlyHolidayList = [
     {"name": "Sick Leave", "days": 6},
     {"name": "Emergency Leave", "days": 6},
@@ -54,7 +54,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
     return total;
   }
 
-  // NATIONAL HOLIDAYS (defaults)
   List<Map<String, String>> _holidays = [
     {"name": "Republic Day", "date": "26 Jan 2025", "day": "Sunday"},
     {"name": "Holi", "date": "29 Mar 2025", "day": "Saturday"},
@@ -63,6 +62,23 @@ class _AdminHomePageState extends State<AdminHomePage> {
     {"name": "Christmas", "date": "25 Dec 2025", "day": "Thursday"},
   ];
 
+  String _monthName(int m) {
+  const months = [
+    "Jan","Feb","Mar","Apr","May","Jun",
+    "Jul","Aug","Sep","Oct","Nov","Dec"
+  ];
+  return months[m - 1];
+}
+
+String _dayName(int weekday) {
+  const days = [
+    "Monday","Tuesday","Wednesday",
+    "Thursday","Friday","Saturday","Sunday"
+  ];
+  return days[weekday - 1];
+}
+
+
   int holidayIndex = 0;
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -70,12 +86,24 @@ class _AdminHomePageState extends State<AdminHomePage> {
   @override
   void initState() {
     super.initState();
-    // load data from Firestore (if available)
+   
     _loadDataFromFirestore();
+    _loadUserDataFromFirestore();
+  }
+  
+  Future<void> _loadUserDataFromFirestore() async{
+    final userRef = await _firestore.collection('user_data').get();
+    final userdata = userRef.docs;
+    print(userdata);
+    setState(() {
+      totalUsers = userdata.length;
+      totalUserList = userdata;
+    });
   }
 
   Future<void> _loadDataFromFirestore() async {
     try {
+      
       final docRef = _firestore.collection('admins').doc(adminDocId);
       final snapshot = await docRef.get();
 
@@ -83,15 +111,14 @@ class _AdminHomePageState extends State<AdminHomePage> {
         final data = snapshot.data()!;
 
         setState(() {
-          totalUsers = (data['totalUsers'] ?? totalUserList.length) as int;
-          pendingLeaves = (data['pendingLeaves'] ?? pendingLeaves) as int;
-          approvedLeaves = (data['approvedLeaves'] ?? approvedLeaves) as int;
+          
+          
 
           // load totalUserList (List<String>)
-          if (data['totalUserList'] != null) {
-            final list = List.from(data['totalUserList']);
-            totalUserList = list.map((e) => e.toString()).toList();
-          }
+          // if (data['totalUserList'] != null) {
+          //   final list = List.from(data['totalUserList']);
+          //   totalUserList = list.map((e) => e.toString()).toList();
+          // }
 
           // load weeklyOff as List<String>
           if (data['weeklyOff'] != null) {
@@ -99,7 +126,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             selectedDays = list.map((e) => e.toString()).toList();
           }
 
-          // load yearlyLeaves as list of maps {'name':..., 'days':...}
+        
           if (data['yearlyLeaves'] != null) {
             final list = List.from(data['yearlyLeaves']);
             yearlyHolidayList = list.map((e) {
@@ -113,7 +140,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             }).toList();
           }
 
-          // load nationalHolidays as list of maps
+      
           if (data['nationalHolidays'] != null) {
             final list = List.from(data['nationalHolidays']);
             _holidays = list.map((e) {
@@ -125,7 +152,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             }).toList();
           }
 
-          // clamp holidayIndex
+         
           if (_holidays.isNotEmpty) {
             holidayIndex = holidayIndex % _holidays.length;
           } else {
@@ -185,68 +212,90 @@ class _AdminHomePageState extends State<AdminHomePage> {
     }
   });
 
-  // ADD NEW NATIONAL HOLIDAY (and save to Firestore)
+ 
   void addNewHoliday() {
-    TextEditingController nameCtrl = TextEditingController();
-    TextEditingController dateCtrl = TextEditingController();
-    TextEditingController dayCtrl = TextEditingController();
+  TextEditingController nameCtrl = TextEditingController();
+  TextEditingController dateCtrl = TextEditingController();
+  TextEditingController dayCtrl = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Add National Holiday"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: "Holiday Name"),
-            ),
-            TextField(
-              controller: dateCtrl,
-              decoration: const InputDecoration(
-                labelText: "Date (e.g., 26 Jan 2025)",
-              ),
-            ),
-            TextField(
-              controller: dayCtrl,
-              decoration: const InputDecoration(
-                labelText: "Day (e.g., Sunday)",
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text("Add National Holiday"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: nameCtrl,
+            decoration: const InputDecoration(labelText: "Holiday Name"),
           ),
-          TextButton(
-            onPressed: () async {
-              if (nameCtrl.text.isNotEmpty &&
-                  dateCtrl.text.isNotEmpty &&
-                  dayCtrl.text.isNotEmpty) {
-                setState(() {
-                  _holidays.add({
-                    "name": nameCtrl.text.trim(),
-                    "date": dateCtrl.text.trim(),
-                    "day": dayCtrl.text.trim(),
-                  });
-                  holidayIndex = _holidays.length - 1;
-                });
 
-                await _updateFirestore();
-                Navigator.pop(context);
+          const SizedBox(height: 12),
+
+          TextField(
+            controller: dateCtrl,
+            readOnly: true,
+            decoration: const InputDecoration(labelText: "Select Date"),
+            onTap: () async {
+              DateTime? picked = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now(),
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2035),
+              );
+
+              if (picked != null) {
+                String formatted =
+                    "${picked.day} ${_monthName(picked.month)} ${picked.year}";
+
+                setState(() {
+                  dateCtrl.text = formatted;
+                  dayCtrl.text = _dayName(picked.weekday);
+                });
               }
             },
-            child: const Text("Add"),
+          ),
+
+          const SizedBox(height: 12),
+
+          TextField(
+            controller: dayCtrl,
+            readOnly: true,
+            decoration: const InputDecoration(labelText: "Day"),
           ),
         ],
       ),
-    );
-  }
 
-  // YEARLY HOLIDAY LIST (BOTTOM SHEET)
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
+        TextButton(
+          onPressed: () {
+            if (nameCtrl.text.isNotEmpty &&
+                dateCtrl.text.isNotEmpty &&
+                dayCtrl.text.isNotEmpty) {
+              setState(() {
+                _holidays.add({
+                  "name": nameCtrl.text,
+                  "date": dateCtrl.text,
+                  "day": dayCtrl.text,
+                });
+
+                _updateFirestore();
+              });
+
+              Navigator.pop(context);
+            }
+          },
+          child: const Text("Add"),
+        ),
+      ],
+    ),
+  );
+}
+
   void _showYearlyLeaveList() {
     TextEditingController nameCtrl = TextEditingController();
     TextEditingController daysCtrl = TextEditingController();
@@ -340,7 +389,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                         icon: const Icon(
                           Icons.add_circle,
                           size: 30,
-                          color: Colors.purple,
+                          color: Colors.lightBlue,
                         ),
                       ),
                     ],
@@ -361,9 +410,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
                           child: Row(
                             children: [
                               const Icon(
-                                Icons.beach_access,
-                                color: Colors.purple,
-                              ),
+                                      Icons.event_note,
+                                      color: Colors.blueGrey,
+                                      ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
@@ -468,83 +517,41 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  // Employee list modal (Add/Delete) — synced with Firestore
-  void _showEmployeeList(BuildContext context) {
-    TextEditingController empCtrl = TextEditingController();
+  
+ void _showEmployeeList(BuildContext context) {
+  TextEditingController empCtrl = TextEditingController();
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheet) {
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 16,
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.75,
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Total Employees",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) => StatefulBuilder(
+      builder: (context, setSheet) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.75,
+            child: Column(
+              children: [
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Total Employees",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.add_circle,
-                          color: Colors.teal,
-                          size: 30,
-                        ),
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              title: const Text("Add Employee"),
-                              content: TextField(
-                                controller: empCtrl,
-                                decoration: const InputDecoration(
-                                  labelText: "Name",
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text("Cancel"),
-                                ),
-                                TextButton(
-                                  onPressed: () async {
-                                    if (empCtrl.text.isNotEmpty) {
-                                      setSheet(() {
-                                        totalUserList.add(empCtrl.text.trim());
-                                        totalUsers = totalUserList.length;
-                                      });
-                                      setState(() {});
-                                      await _updateFirestore();
-                                      empCtrl.clear();
-                                      Navigator.pop(context);
-                                    }
-                                  },
-                                  child: const Text("Add"),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
                   const SizedBox(height: 8),
                   Expanded(
                     child: ListView.builder(
@@ -563,7 +570,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  totalUserList[index],
+                                  totalUserList[index]["username"],
                                   style: const TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w600,
@@ -599,7 +606,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  // Weekly Off selector — sync changes to Firestore immediately
   void _showWeeklyOffSelector(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -822,7 +828,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
             const SizedBox(height: 25),
 
-            // NATIONAL HOLIDAYS CONTAINER (with add)
+          
             Stack(
               children: [
                 Container(
