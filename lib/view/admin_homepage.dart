@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -10,21 +9,16 @@ class AdminHomePage extends StatefulWidget {
 }
 
 class _AdminHomePageState extends State<AdminHomePage> {
- 
-  final String adminDocId = "admin@gmail.com";
 
-  // Dashboard values (defaults)
-  int totalUsers = 5;
-  int pendingLeaves = 5;
-  int approvedLeaves = 18;
+ // int totalUsers = 0;
+  int pendingLeaves = 0;
+  int approvedLeaves = 0;
 
-  List  totalUserList = [
-    "Sanket",
-    "Shreya",
-    "Arati",
-    "Vaishnavi",
-    "Siddharth",
-  ];
+  //List totalUserList = ["Sanket", "Shreya", "Arati", "Vaishnavi", "Siddharth"];
+
+
+    int totalUsers = 0;
+List<Map<String, dynamic>> totalUserList = [];
 
   List<String> days = [
     "Monday",
@@ -36,9 +30,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
     "Sunday",
   ];
 
-  List<String> selectedDays = ["Saturday", "Sunday"];
+  List<String> selectedDays = ["Thursday"];
 
-  
   List<Map<String, dynamic>> yearlyHolidayList = [
     {"name": "Sick Leave", "days": 6},
     {"name": "Emergency Leave", "days": 6},
@@ -63,142 +56,113 @@ class _AdminHomePageState extends State<AdminHomePage> {
   ];
 
   String _monthName(int m) {
-  const months = [
-    "Jan","Feb","Mar","Apr","May","Jun",
-    "Jul","Aug","Sep","Oct","Nov","Dec"
-  ];
-  return months[m - 1];
-}
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    return months[m - 1];
+  }
 
-String _dayName(int weekday) {
-  const days = [
-    "Monday","Tuesday","Wednesday",
-    "Thursday","Friday","Saturday","Sunday"
-  ];
-  return days[weekday - 1];
-}
-
+  String _dayName(int weekday) {
+    const days = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+    return days[weekday - 1];
+  }
 
   int holidayIndex = 0;
-
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
-   
-    _loadDataFromFirestore();
+    fetchYearlyLeaves();
     _loadUserDataFromFirestore();
   }
-  
-  Future<void> _loadUserDataFromFirestore() async{
-    final userRef = await _firestore.collection('user_data').get();
-    final userdata = userRef.docs;
-    print(userdata);
-    setState(() {
-      totalUsers = userdata.length;
-      totalUserList = userdata;
+
+  Future<void> saveWeeklyOffToFirestore() async {
+    final docRef = FirebaseFirestore.instance
+        .collection('admins')
+        .doc('admin@gmail.com');
+
+    await docRef.update({
+      'weeklyOff': selectedDays,
+      'updatedAt': Timestamp.now(),
     });
   }
 
-  Future<void> _loadDataFromFirestore() async {
+  Future<void> saveHolidayToFirestore(Map<String, dynamic> holiday) async {
+    final docRef = FirebaseFirestore.instance
+        .collection('admins')
+        .doc('admin@gmail.com'); // your admin document id
+
+    await docRef.update({
+      'nationalHolidays': FieldValue.arrayUnion([holiday]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> saveYearlyLeavesToFirestore() async {
     try {
-      
-      final docRef = _firestore.collection('admins').doc(adminDocId);
-      final snapshot = await docRef.get();
+      await FirebaseFirestore.instance
+          .collection('admins')
+          .doc('admin@gmail.com')
+          .set({"yearlyLeaves": yearlyHolidayList}, SetOptions(merge: true));
 
-      if (snapshot.exists && snapshot.data() != null) {
-        final data = snapshot.data()!;
-
-        setState(() {
-          
-          
-
-          // load totalUserList (List<String>)
-          // if (data['totalUserList'] != null) {
-          //   final list = List.from(data['totalUserList']);
-          //   totalUserList = list.map((e) => e.toString()).toList();
-          // }
-
-          // load weeklyOff as List<String>
-          if (data['weeklyOff'] != null) {
-            final list = List.from(data['weeklyOff']);
-            selectedDays = list.map((e) => e.toString()).toList();
-          }
-
-        
-          if (data['yearlyLeaves'] != null) {
-            final list = List.from(data['yearlyLeaves']);
-            yearlyHolidayList = list.map((e) {
-              return {
-                "name": e['name'].toString(),
-                // ensure days is int
-                "days": (e['days'] is int)
-                    ? e['days']
-                    : int.tryParse(e['days'].toString()) ?? 0,
-              };
-            }).toList();
-          }
-
-      
-          if (data['nationalHolidays'] != null) {
-            final list = List.from(data['nationalHolidays']);
-            _holidays = list.map((e) {
-              return {
-                "name": e['name'].toString(),
-                "date": e['date'].toString(),
-                "day": e['day'].toString(),
-              };
-            }).toList();
-          }
-
-         
-          if (_holidays.isNotEmpty) {
-            holidayIndex = holidayIndex % _holidays.length;
-          } else {
-            holidayIndex = 0;
-          }
-        });
-      } else {
-        // no doc exists - write defaults to Firestore so future loads fetch them
-        await _updateFirestore(); // create doc with default values
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Yearly Leaves Updated Successfully")),
+      );
     } catch (e) {
-      // ignore for now or show message
-      // print('Error loading Firestore data: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error Saving Data: $e")));
     }
   }
 
-  Future<void> _updateFirestore() async {
-    try {
-      final docRef = _firestore.collection('admins').doc(adminDocId);
+  Future<void> fetchYearlyLeaves() async {
+    var doc = await FirebaseFirestore.instance
+        .collection('admins')
+        .doc('admin@gmail.com')
+        .get();
 
-      // convert lists to plain maps/primitives for Firestore
-      final yearlyLeavesToSave = yearlyHolidayList
-          .map((e) => {"name": e['name'].toString(), "days": e['days']})
-          .toList();
-
-      final nationalHolidaysToSave = _holidays
-          .map(
-            (e) => {"name": e['name']!, "date": e['date']!, "day": e['day']!},
-          )
-          .toList();
-
-      await docRef.set({
-        "totalUsers": totalUsers,
-        "pendingLeaves": pendingLeaves,
-        "approvedLeaves": approvedLeaves,
-        "totalUserList": totalUserList,
-        "weeklyOff": selectedDays,
-        "yearlyLeaves": yearlyLeavesToSave,
-        "nationalHolidays": nationalHolidaysToSave,
-        "updatedAt": FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    } catch (e) {
-      // handle error (optional)
-      // print('Error updating Firestore: $e');
+    if (doc.exists && doc.data()!.containsKey('yearlyLeaves')) {
+      setState(() {
+        yearlyHolidayList = List<Map<String, dynamic>>.from(
+          doc['yearlyLeaves'],
+        );
+      });
     }
   }
+
+
+
+Future<void> _loadUserDataFromFirestore() async {
+  try {
+    final snapshot = await FirebaseFirestore.instance.collection('user_data').get();
+
+    setState(() {
+      totalUserList = snapshot.docs.map((doc) => doc.data()).toList();
+      totalUsers = totalUserList.length;
+    });
+  } catch (e) {
+    print("Error loading user data: $e");
+  }
+}
 
   void nextHoliday() => setState(() {
     if (_holidays.isNotEmpty) {
@@ -212,89 +176,84 @@ String _dayName(int weekday) {
     }
   });
 
- 
   void addNewHoliday() {
-  TextEditingController nameCtrl = TextEditingController();
-  TextEditingController dateCtrl = TextEditingController();
-  TextEditingController dayCtrl = TextEditingController();
+    TextEditingController nameCtrl = TextEditingController();
+    TextEditingController dateCtrl = TextEditingController();
+    TextEditingController dayCtrl = TextEditingController();
 
-  showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text("Add National Holiday"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: nameCtrl,
-            decoration: const InputDecoration(labelText: "Holiday Name"),
-          ),
-
-          const SizedBox(height: 12),
-
-          TextField(
-            controller: dateCtrl,
-            readOnly: true,
-            decoration: const InputDecoration(labelText: "Select Date"),
-            onTap: () async {
-              DateTime? picked = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2035),
-              );
-
-              if (picked != null) {
-                String formatted =
-                    "${picked.day} ${_monthName(picked.month)} ${picked.year}";
-
-                setState(() {
-                  dateCtrl.text = formatted;
-                  dayCtrl.text = _dayName(picked.weekday);
-                });
-              }
-            },
-          ),
-
-          const SizedBox(height: 12),
-
-          TextField(
-            controller: dayCtrl,
-            readOnly: true,
-            decoration: const InputDecoration(labelText: "Day"),
-          ),
-        ],
-      ),
-
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Cancel"),
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Add National Holiday"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: "Holiday Name"),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: dateCtrl,
+              readOnly: true,
+              decoration: const InputDecoration(labelText: "Select Date"),
+              onTap: () async {
+                DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2035),
+                );
+                if (picked != null) {
+                  String formatted =
+                      "${picked.day} ${_monthName(picked.month)} ${picked.year}";
+                  setState(() {
+                    dateCtrl.text = formatted;
+                    dayCtrl.text = _dayName(picked.weekday);
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: dayCtrl,
+              readOnly: true,
+              decoration: const InputDecoration(labelText: "Day"),
+            ),
+          ],
         ),
-        TextButton(
-          onPressed: () {
-            if (nameCtrl.text.isNotEmpty &&
-                dateCtrl.text.isNotEmpty &&
-                dayCtrl.text.isNotEmpty) {
-              setState(() {
-                _holidays.add({
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              if (nameCtrl.text.isNotEmpty &&
+                  dateCtrl.text.isNotEmpty &&
+                  dayCtrl.text.isNotEmpty) {
+                final newHoliday = {
                   "name": nameCtrl.text,
                   "date": dateCtrl.text,
                   "day": dayCtrl.text,
+                };
+
+                setState(() {
+                  _holidays.add(newHoliday);
+                  saveYearlyLeavesToFirestore();
                 });
 
-                _updateFirestore();
-              });
+                saveHolidayToFirestore(newHoliday);
 
-              Navigator.pop(context);
-            }
-          },
-          child: const Text("Add"),
-        ),
-      ],
-    ),
-  );
-}
+                Navigator.pop(context);
+              }
+            },
+            child: const Text("Add"),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showYearlyLeaveList() {
     TextEditingController nameCtrl = TextEditingController();
@@ -331,7 +290,6 @@ String _dayName(int weekday) {
                       ),
                       IconButton(
                         onPressed: () {
-                          // Add new yearly leave type
                           showDialog(
                             context: context,
                             builder: (_) => AlertDialog(
@@ -367,14 +325,12 @@ String _dayName(int weekday) {
                                         yearlyHolidayList.add({
                                           "name": nameCtrl.text.trim(),
                                           "days":
-                                              int.tryParse(
-                                                daysCtrl.text.trim(),
-                                              ) ??
-                                              0,
+                                              int.tryParse(daysCtrl.text) ?? 0,
                                         });
                                       });
                                       setState(() {});
-                                      await _updateFirestore();
+                                      await saveYearlyLeavesToFirestore();
+
                                       nameCtrl.clear();
                                       daysCtrl.clear();
                                       Navigator.pop(context);
@@ -410,9 +366,9 @@ String _dayName(int weekday) {
                           child: Row(
                             children: [
                               const Icon(
-                                      Icons.event_note,
-                                      color: Colors.blueGrey,
-                                      ),
+                                Icons.event_note,
+                                color: Colors.blueGrey,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
@@ -423,13 +379,14 @@ String _dayName(int weekday) {
                                   ),
                                 ),
                               ),
+
+                              /// EDIT BUTTON
                               IconButton(
                                 icon: const Icon(
                                   Icons.edit,
                                   color: Colors.blue,
                                 ),
                                 onPressed: () {
-                                  // Edit item
                                   final editNameCtrl = TextEditingController(
                                     text: item['name'],
                                   );
@@ -473,13 +430,13 @@ String _dayName(int weekday) {
                                                     .trim(),
                                                 "days":
                                                     int.tryParse(
-                                                      editDaysCtrl.text.trim(),
+                                                      editDaysCtrl.text,
                                                     ) ??
                                                     0,
                                               };
                                             });
                                             setState(() {});
-                                            await _updateFirestore();
+                                            await saveYearlyLeavesToFirestore();
                                             Navigator.pop(context);
                                           },
                                           child: const Text("Save"),
@@ -489,17 +446,44 @@ String _dayName(int weekday) {
                                   );
                                 },
                               ),
+
+                              /// DELETE BUTTON
                               IconButton(
                                 icon: const Icon(
                                   Icons.delete,
                                   color: Colors.red,
                                 ),
-                                onPressed: () async {
-                                  setSheet(() {
-                                    yearlyHolidayList.removeAt(index);
-                                  });
-                                  setState(() {});
-                                  await _updateFirestore();
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: const Text("Delete Leave Type"),
+                                      content: Text(
+                                        "Are you sure you want to delete '${item['name']}'?",
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text("Cancel"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            setSheet(() {
+                                              yearlyHolidayList.removeAt(index);
+                                            });
+                                            setState(() {});
+                                            await saveYearlyLeavesToFirestore();
+                                            Navigator.pop(context);
+                                          },
+                                          child: const Text(
+                                            "Delete",
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
                                 },
                               ),
                             ],
@@ -516,11 +500,7 @@ String _dayName(int weekday) {
       ),
     );
   }
-
-  
- void _showEmployeeList(BuildContext context) {
-  TextEditingController empCtrl = TextEditingController();
-
+void _showEmployeeList(BuildContext context) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -540,71 +520,52 @@ String _dayName(int weekday) {
             height: MediaQuery.of(context).size.height * 0.75,
             child: Column(
               children: [
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Total Employees",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                const Text(
+                  "Employee List",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: totalUserList.length,
-                      itemBuilder: (_, index) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.person, color: Colors.teal),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  totalUserList[index]["username"],
-                                  style: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                const SizedBox(height: 12),
+
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: totalUserList.length,
+                    itemBuilder: (_, index) {
+                      final user = totalUserList[index];
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.person, color: Colors.teal),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                user["username"] ?? "Unknown User",
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () async {
-                                  setSheet(() {
-                                    totalUserList.removeAt(index);
-                                    totalUsers = totalUserList.length;
-                                  });
-                                  setState(() {});
-                                  await _updateFirestore();
-                                },
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          );
-        },
-      ),
-    );
-  }
+          ),
+        );
+      },
+    ),
+  );
+}
 
   void _showWeeklyOffSelector(BuildContext context) {
     showModalBottomSheet(
@@ -652,16 +613,14 @@ String _dayName(int weekday) {
                               ),
                               Checkbox(
                                 value: isSelected,
-                                onChanged: (v) async {
+                                onChanged: (v) {
                                   setSheet(() {
-                                    if (v == true) {
+                                    if (v == true)
                                       selectedDays.add(day);
-                                    } else {
+                                    else
                                       selectedDays.remove(day);
-                                    }
                                   });
                                   setState(() {});
-                                  await _updateFirestore();
                                 },
                               ),
                             ],
@@ -669,6 +628,13 @@ String _dayName(int weekday) {
                         );
                       }).toList(),
                     ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      saveWeeklyOffToFirestore();
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Save"),
                   ),
                 ],
               ),
@@ -679,7 +645,6 @@ String _dayName(int weekday) {
     );
   }
 
-  // Small dashboard card widget
   Widget _buildDashboardCard({
     required Color color,
     required IconData icon,
@@ -723,7 +688,6 @@ String _dayName(int weekday) {
 
   @override
   Widget build(BuildContext context) {
-    // handle case where holidays might be empty
     final h = _holidays.isNotEmpty
         ? _holidays[holidayIndex]
         : {"name": "", "date": "", "day": ""};
@@ -743,7 +707,7 @@ String _dayName(int weekday) {
         padding: const EdgeInsets.all(14),
         child: Column(
           children: [
-            // FIRST ROW CARDS
+            /// FIRST ROW
             LayoutBuilder(
               builder: (context, constraints) {
                 return Wrap(
@@ -785,7 +749,7 @@ String _dayName(int weekday) {
 
             const SizedBox(height: 12),
 
-            // SECOND ROW CARDS
+            /// SECOND ROW
             LayoutBuilder(
               builder: (context, constraints) {
                 return Wrap(
@@ -828,7 +792,6 @@ String _dayName(int weekday) {
 
             const SizedBox(height: 25),
 
-          
             Stack(
               children: [
                 Container(
