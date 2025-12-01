@@ -177,7 +177,7 @@ class HistoryPageState extends State<HistoryPage> {
                               fontWeight: FontWeight.bold,
                               color: leave.status == 'Approved'
                                   ? Colors.green
-                                  : leave.status == 'Rejected'
+                                  : leave.status == 'Cancel Leave'
                                   ? Colors.red
                                   : Colors.orange,
                             ),

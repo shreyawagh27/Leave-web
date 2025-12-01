@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'show_all_req_admin_side.dart';
-
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -11,9 +9,17 @@ class AdminHomePage extends StatefulWidget {
 }
 
 class _AdminHomePageState extends State<AdminHomePage> {
-  final String adminDocId = "admin@gmail.com";
 
-  bool showDays = false;
+ // int totalUsers = 0;
+  int? pendingLeaves = 0 ;
+  int approvedLeaves = 0;
+
+  //List totalUserList = ["Sanket", "Shreya", "Arati", "Vaishnavi", "Siddharth"];
+
+
+    int totalUsers = 0;
+List<Map<String, dynamic>> totalUserList = [];
+
   List<String> days = [
     "Monday",
     "Tuesday",
@@ -23,78 +29,231 @@ class _AdminHomePageState extends State<AdminHomePage> {
     "Saturday",
     "Sunday",
   ];
+
   List<String> selectedDays = ["Thursday"];
 
-  int pendingCount = 0;
-  int approvedCount = 0;
-  int rejectedCount = 0;
-  int yearlyHolidays = 0;
-  List<Map<String, dynamic>> holidays = [
-    {"name": "New Year", "date": DateTime(2025, 1, 1)},
-    {"name": "Independence Day", "date": DateTime(2025, 8, 15)},
-  ];
-  List<Map<String, dynamic>> leaveTypes = [
-    {"id": "1", "name": "Casual Leave", "days": 12},
-    {"id": "2", "name": "Sick Leave", "days": 8},
+  List<Map<String, dynamic>> yearlyHolidayList = [
+    {"name": "Sick Leave", "days": 6},
+    {"name": "Emergency Leave", "days": 6},
+    {"name": "Unpaid Leave", "days": 0},
+    {"name": "Planned Leave", "days": 12},
   ];
 
-  void addHolidayPopup() {
+  int get totalLeaveDays {
+    int total = 0;
+    for (var item in yearlyHolidayList) {
+      total += item["days"] as int;
+    }
+    return total;
+  }
+
+  List<Map<String, String>> _holidays = [
+    {"name": "Republic Day", "date": "26 Jan 2025", "day": "Sunday"},
+    {"name": "Holi", "date": "29 Mar 2025", "day": "Saturday"},
+    {"name": "Independence Day", "date": "15 Aug 2025", "day": "Friday"},
+    {"name": "Diwali", "date": "20 Oct 2025", "day": "Monday"},
+    {"name": "Christmas", "date": "25 Dec 2025", "day": "Thursday"},
+  ];
+
+  String _monthName(int m) {
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    return months[m - 1];
+  }
+
+  String _dayName(int weekday) {
+    const days = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+    return days[weekday - 1];
+  }
+
+  int holidayIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchYearlyLeaves();
+    _loadUserDataFromFirestore();
+  }
+
+  Future<void> saveWeeklyOffToFirestore() async {
+    final docRef = FirebaseFirestore.instance
+        .collection('admins')
+        .doc('admin@gmail.com');
+
+    await docRef.update({
+      'weeklyOff': selectedDays,
+      'updatedAt': Timestamp.now(),
+    });
+  }
+
+  Future<void> saveHolidayToFirestore(Map<String, dynamic> holiday) async {
+    final docRef = FirebaseFirestore.instance
+        .collection('admins')
+        .doc('admin@gmail.com'); 
+
+    await docRef.update({
+      'nationalHolidays': FieldValue.arrayUnion([holiday]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> saveYearlyLeavesToFirestore() async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('admins')
+          .doc('admin@gmail.com')
+          .set({"yearlyLeaves": yearlyHolidayList}, SetOptions(merge: true));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Yearly Leaves Updated Successfully")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error Saving Data: $e")));
+    }
+  }
+
+  Future<void> fetchYearlyLeaves() async {
+    var doc = await FirebaseFirestore.instance
+        .collection('admins')
+        .doc('admin@gmail.com')
+        .get();
+
+    if (doc.exists && doc.data()!.containsKey('yearlyLeaves')) {
+      setState(() {
+        yearlyHolidayList = List<Map<String, dynamic>>.from(
+          doc['yearlyLeaves'],
+        );
+      });
+    }
+  }
+
+
+
+Future<void> _loadUserDataFromFirestore() async {
+  try {
+    final pendingCountSnapshot = await FirebaseFirestore.instance
+    .collection('leave_request')
+    .where('status', isEqualTo: 'Pending')
+    .count()
+    .get();
+    pendingLeaves = pendingCountSnapshot.count;
+
+    final snapshot = await FirebaseFirestore.instance.collection('user_data').get();
+
+    setState(() {
+      totalUserList = snapshot.docs.map((doc) => doc.data()).toList();
+      totalUsers = totalUserList.length;
+    });
+  } catch (e) {
+    print("Error loading user data: $e");
+  }
+}
+
+  void nextHoliday() => setState(() {
+    if (_holidays.isNotEmpty) {
+      holidayIndex = (holidayIndex + 1) % _holidays.length;
+    }
+  });
+
+  void prevHoliday() => setState(() {
+    if (_holidays.isNotEmpty) {
+      holidayIndex = (holidayIndex - 1 + _holidays.length) % _holidays.length;
+    }
+  });
+
+  void addNewHoliday() {
     TextEditingController nameCtrl = TextEditingController();
-    DateTime? pickedDate;
+    TextEditingController dateCtrl = TextEditingController();
+    TextEditingController dayCtrl = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Add Holiday"),
-        content: StatefulBuilder(
-          builder: (context, setSB) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: "Holiday Name"),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Text(
-                      pickedDate == null
-                          ? "No date"
-                          : pickedDate.toString().split(" ").first,
-                    ),
-                    const Spacer(),
-                    ElevatedButton(
-                      onPressed: () async {
-                        DateTime? date = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2050),
-                        );
-                        if (date != null) setSB(() => pickedDate = date);
-                      },
-                      child: const Text("Pick Date"),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          },
+      builder: (_) => AlertDialog(
+        title: const Text("Add National Holiday"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: "Holiday Name"),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: dateCtrl,
+              readOnly: true,
+              decoration: const InputDecoration(labelText: "Select Date"),
+              onTap: () async {
+                DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2035),
+                );
+                if (picked != null) {
+                  String formatted =
+                      "${picked.day} ${_monthName(picked.month)} ${picked.year}";
+                  setState(() {
+                    dateCtrl.text = formatted;
+                    dayCtrl.text = _dayName(picked.weekday);
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: dayCtrl,
+              readOnly: true,
+              decoration: const InputDecoration(labelText: "Day"),
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text("Cancel"),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () {
-              if (pickedDate != null && nameCtrl.text.isNotEmpty) {
+              if (nameCtrl.text.isNotEmpty &&
+                  dateCtrl.text.isNotEmpty &&
+                  dayCtrl.text.isNotEmpty) {
+                final newHoliday = {
+                  "name": nameCtrl.text,
+                  "date": dateCtrl.text,
+                  "day": dayCtrl.text,
+                };
+
                 setState(() {
-                  holidays.add({"name": nameCtrl.text, "date": pickedDate});
+                  _holidays.add(newHoliday);
+                  saveYearlyLeavesToFirestore();
                 });
+
+                saveHolidayToFirestore(newHoliday);
+
+                Navigator.pop(context);
               }
-              Navigator.pop(context);
             },
             child: const Text("Add"),
           ),
@@ -103,550 +262,613 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  void editHolidayPopup(Map<String, dynamic> holiday) {
-    TextEditingController nameCtrl = TextEditingController(
-      text: holiday["name"],
-    );
-    DateTime selectedDate = holiday["date"];
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Edit Holiday"),
-        content: StatefulBuilder(
-          builder: (context, setSB) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: "Holiday Name"),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Text(selectedDate.toString().split(" ").first),
-                    const Spacer(),
-                    ElevatedButton(
-                      onPressed: () async {
-                        DateTime? newDate = await showDatePicker(
-                          context: context,
-                          initialDate: selectedDate,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2050),
-                        );
-                        if (newDate != null)
-                          setSB(() => selectedDate = newDate);
-                      },
-                      child: const Text("Pick Date"),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                holidays.remove(holiday);
-                holidays.add({"name": nameCtrl.text, "date": selectedDate});
-              });
-              Navigator.pop(context);
-            },
-            child: const Text("Save"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void addLeaveTypePopup() {
+  void _showYearlyLeaveList() {
     TextEditingController nameCtrl = TextEditingController();
     TextEditingController daysCtrl = TextEditingController();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Add Leave Type"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: "Leave Type Name"),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheet) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
-            TextField(
-              controller: daysCtrl,
-              decoration: const InputDecoration(labelText: "Days per year"),
-              keyboardType: TextInputType.number,
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Yearly Holiday Types",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text("Add Yearly Leave Type"),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextField(
+                                    controller: nameCtrl,
+                                    decoration: const InputDecoration(
+                                      labelText: "Leave Type",
+                                    ),
+                                  ),
+                                  TextField(
+                                    controller: daysCtrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(
+                                      labelText: "Days",
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("Cancel"),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    if (nameCtrl.text.isNotEmpty &&
+                                        daysCtrl.text.isNotEmpty) {
+                                      setSheet(() {
+                                        yearlyHolidayList.add({
+                                          "name": nameCtrl.text.trim(),
+                                          "days":
+                                              int.tryParse(daysCtrl.text) ?? 0,
+                                        });
+                                      });
+                                      setState(() {});
+                                      await saveYearlyLeavesToFirestore();
+
+                                      nameCtrl.clear();
+                                      daysCtrl.clear();
+                                      Navigator.pop(context);
+                                    }
+                                  },
+                                  child: const Text("Add"),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.add_circle,
+                          size: 30,
+                          color: Colors.lightBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: yearlyHolidayList.length,
+                      itemBuilder: (_, index) {
+                        final item = yearlyHolidayList[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.event_note,
+                                color: Colors.blueGrey,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  "${item['name']} - ${item['days']} days",
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+
+                              /// EDIT BUTTON
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blue,
+                                ),
+                                onPressed: () {
+                                  final editNameCtrl = TextEditingController(
+                                    text: item['name'],
+                                  );
+                                  final editDaysCtrl = TextEditingController(
+                                    text: item['days'].toString(),
+                                  );
+
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: const Text("Edit Leave Type"),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          TextField(
+                                            controller: editNameCtrl,
+                                            decoration: const InputDecoration(
+                                              labelText: "Name",
+                                            ),
+                                          ),
+                                          TextField(
+                                            controller: editDaysCtrl,
+                                            keyboardType: TextInputType.number,
+                                            decoration: const InputDecoration(
+                                              labelText: "Days",
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text("Cancel"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            setSheet(() {
+                                              yearlyHolidayList[index] = {
+                                                "name": editNameCtrl.text
+                                                    .trim(),
+                                                "days":
+                                                    int.tryParse(
+                                                      editDaysCtrl.text,
+                                                    ) ??
+                                                    0,
+                                              };
+                                            });
+                                            setState(() {});
+                                            await saveYearlyLeavesToFirestore();
+                                            Navigator.pop(context);
+                                          },
+                                          child: const Text("Save"),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              /// DELETE BUTTON
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: const Text("Delete Leave Type"),
+                                      content: Text(
+                                        "Are you sure you want to delete '${item['name']}'?",
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text("Cancel"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            setSheet(() {
+                                              yearlyHolidayList.removeAt(index);
+                                            });
+                                            setState(() {});
+                                            await saveYearlyLeavesToFirestore();
+                                            Navigator.pop(context);
+                                          },
+                                          child: const Text(
+                                            "Delete",
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+          );
+        },
+      ),
+    );
+  }
+void _showEmployeeList(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) => StatefulBuilder(
+      builder: (context, setSheet) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                leaveTypes.add({
-                  "id": DateTime.now().millisecondsSinceEpoch.toString(),
-                  "name": nameCtrl.text,
-                  "days": int.tryParse(daysCtrl.text.trim()) ?? 0,
-                });
-              });
-              Navigator.pop(context);
-            },
-            child: const Text("Add"),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.75,
+            child: Column(
+              children: [
+                const Text(
+                  "Employee List",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: totalUserList.length,
+                    itemBuilder: (_, index) {
+                      final user = totalUserList[index];
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.person, color: Colors.teal),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                user["username"] ?? "Unknown User",
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
+        );
+      },
+    ),
+  );
+}
+
+  void _showWeeklyOffSelector(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheet) {
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Column(
+                children: [
+                  const Text(
+                    "Select Weekly Off",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: ListView(
+                      children: days.map((day) {
+                        final isSelected = selectedDays.contains(day);
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  day,
+                                  style: const TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Checkbox(
+                                value: isSelected,
+                                onChanged: (v) {
+                                  setSheet(() {
+                                    if (v == true)
+                                      selectedDays.add(day);
+                                    else
+                                      selectedDays.remove(day);
+                                  });
+                                  setState(() {});
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      saveWeeklyOffToFirestore();
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Save"),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  void editLeaveTypePopup(Map<String, dynamic> leaveType) {
-    TextEditingController nameCtrl = TextEditingController(
-      text: leaveType["name"],
-    );
-    TextEditingController daysCtrl = TextEditingController(
-      text: leaveType["days"].toString(),
-    );
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Edit Leave Type"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: "Leave Type Name"),
-            ),
-            TextField(
-              controller: daysCtrl,
-              decoration: const InputDecoration(labelText: "Days"),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                leaveTypes.remove(leaveType);
-                leaveTypes.add({
-                  "id": leaveType["id"],
-                  "name": nameCtrl.text,
-                  "days": int.tryParse(daysCtrl.text.trim()) ?? 0,
-                });
-              });
-              Navigator.pop(context);
-            },
-            child: const Text("Save"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget smallBox(Color color, IconData icon, int count, String label) {
-    return Expanded(
+  Widget _buildDashboardCard({
+    required Color color,
+    required IconData icon,
+    required String value,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
-        height: 110,
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 26),
-            const SizedBox(height: 5),
-            Text(count.toString(), style: const TextStyle(fontSize: 20)),
-            Text(label),
+            Icon(icon, size: 28, color: Colors.black87),
+            const SizedBox(height: 8),
+            FittedBox(
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            FittedBox(
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+            ),
           ],
         ),
       ),
-    );
-  }
-
-  void showHolidaySheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.65,
-          minChildSize: 0.4,
-          maxChildSize: 0.95,
-          builder: (_, controller) {
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          "National Holidays",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: addHolidayPopup,
-                        icon: const Icon(Icons.add),
-                        label: const Text("Add"),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: holidays.isEmpty
-                        ? const Center(child: Text("No holidays added"))
-                        : ListView.builder(
-                            controller: controller,
-                            itemCount: holidays.length,
-                            itemBuilder: (context, index) {
-                              final h = holidays[index];
-                              final date = h["date"] as DateTime;
-                              return Card(
-                                child: ListTile(
-                                  leading: const Icon(Icons.event),
-                                  title: Text(h["name"]),
-                                  subtitle: Text(
-                                    date.toString().split(" ").first,
-                                  ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.edit,
-                                          color: Colors.blue,
-                                        ),
-                                        onPressed: () => editHolidayPopup(h),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete,
-                                          color: Colors.red,
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            holidays.remove(h);
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void showLeaveTypesSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.65,
-          minChildSize: 0.4,
-          maxChildSize: 0.95,
-          builder: (_, controller) {
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          "Leave Types",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: addLeaveTypePopup,
-                        icon: const Icon(Icons.add),
-                        label: const Text("Add"),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: leaveTypes.isEmpty
-                        ? const Center(child: Text("No leave types added"))
-                        : ListView.builder(
-                            controller: controller,
-                            itemCount: leaveTypes.length,
-                            itemBuilder: (context, index) {
-                              final item = leaveTypes[index];
-                              return Card(
-                                child: ListTile(
-                                  leading: const Icon(Icons.event_available),
-                                  title: Text(
-                                    item["name"],
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    "${item["days"]} days per year",
-                                  ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.edit,
-                                          color: Colors.blue,
-                                        ),
-                                        onPressed: () =>
-                                            editLeaveTypePopup(item),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete,
-                                          color: Colors.red,
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            leaveTypes.remove(item);
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final h = _holidays.isNotEmpty
+        ? _holidays[holidayIndex]
+        : {"name": "", "date": "", "day": ""};
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Admin Dashboard"), centerTitle: true),
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        title: const Text(
+          "Admin Dashboard",
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  smallBox(
-                    Colors.orange.shade100,
-                    Icons.pending_actions_outlined,
-                    pendingCount,
-                    "Pending",
-                  ),
-                  const SizedBox(width: 10),
-                  smallBox(
-                    Colors.green.shade100,
-                    Icons.verified_outlined,
-                    approvedCount,
-                    "Approved",
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  smallBox(
-                    Colors.red.shade100,
-                    Icons.close,
-                    rejectedCount,
-                    "Rejected",
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => showLeaveTypesSheet(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        height: 110,
-                        decoration: BoxDecoration(
-                          color: Colors.purple.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.calendar_month, size: 26),
-                            const SizedBox(height: 5),
-                            Text(
-                              yearlyHolidays.toString(),
-                              style: const TextStyle(fontSize: 20),
-                            ),
-                            const Text("Yearly Holidays"),
-                          ],
-                        ),
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            /// FIRST ROW
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    SizedBox(
+                      width: constraints.maxWidth / 3 - 10,
+                      child: _buildDashboardCard(
+                        color: Colors.blue.shade100,
+                        icon: Icons.people_alt_outlined,
+                        value: totalUsers.toString(),
+                        label: "Total Employees",
+                        onTap: () => _showEmployeeList(context),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              sectionHeader(
-                "National Holidays",
-                () => showHolidaySheet(context),
-              ),
-              const SizedBox(height: 20),
-              sectionHeader("Leave Types", () => showLeaveTypesSheet(context)),
-              const SizedBox(height: 20),
-              Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.teal.shade200, width: 1.2),
-                ),
-                color: Colors.white,
-                child: Padding(
+                    SizedBox(
+                      width: constraints.maxWidth / 3 - 10,
+                      child: _buildDashboardCard(
+                        color: Colors.orange.shade100,
+                        icon: Icons.pending_actions_outlined,
+                        value: pendingLeaves.toString(),
+                        label: "Pending Leaves",
+                      ),
+                    ),
+                    SizedBox(
+                      width: constraints.maxWidth / 3 - 10,
+                      child: _buildDashboardCard(
+                        color: Colors.green.shade100,
+                        icon: Icons.verified_outlined,
+                        value: approvedLeaves.toString(),
+                        label: "Approved Leaves",
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            /// SECOND ROW
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    SizedBox(
+                      width: constraints.maxWidth / 3 - 10,
+                      child: _buildDashboardCard(
+                        color: Colors.purple.shade100,
+                        icon: Icons.holiday_village,
+                        value: totalLeaveDays.toString(),
+                        label: "Yearly Holidays",
+                        onTap: _showYearlyLeaveList,
+                      ),
+                    ),
+                    SizedBox(
+                      width: constraints.maxWidth / 3 - 10,
+                      child: _buildDashboardCard(
+                        color: Colors.teal.shade100,
+                        icon: Icons.event_available,
+                        value: "8",
+                        label: "Used Leaves",
+                      ),
+                    ),
+                    SizedBox(
+                      width: constraints.maxWidth / 3 - 10,
+                      child: _buildDashboardCard(
+                        color: Colors.indigo.shade100,
+                        icon: Icons.calendar_today,
+                        value: selectedDays.join(", "),
+                        label: "Weekly Off",
+                        onTap: () => _showWeeklyOffSelector(context),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+            const SizedBox(height: 25),
+
+            Stack(
+              children: [
+                Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFE3F2FD), Color(0xFFEDE7F6)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const Text(
+                        "National Holidays",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueAccent,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        h["name"] ?? "",
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "${h['date']} • ${h['day']}",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black54,
+                        ),
+                      ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "Weekly Off",
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              Text(
-                                selectedDays.join(", "),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.teal,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back_ios),
+                            onPressed: prevHoliday,
                           ),
                           IconButton(
-                            icon: Icon(
-                              showDays
-                                  ? Icons.keyboard_arrow_up
-                                  : Icons.keyboard_arrow_down,
-                              color: Colors.teal,
-                              size: 28,
-                            ),
-                            onPressed: () {
-                              setState(() => showDays = !showDays);
-                            },
+                            icon: const Icon(Icons.arrow_forward_ios),
+                            onPressed: nextHoliday,
                           ),
                         ],
                       ),
-                      if (showDays)
-                        Column(
-                          children: days.map((day) {
-                            return CheckboxListTile(
-                              title: Text(day),
-                              value: selectedDays.contains(day),
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  if (value == true) {
-                                    selectedDays.add(day);
-                                  } else {
-                                    selectedDays.remove(day);
-                                  }
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      "Weekly off updated: ${selectedDays.join(', ')}",
-                                    ),
-                                    backgroundColor: Colors.green.shade600,
-                                    behavior: SnackBarBehavior.floating,
-                                    duration: const Duration(seconds: 2),
-                                  ),
-                                );
-                              },
-                            );
-                          }).toList(),
-                        ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: InkWell(
+                    onTap: addNewHoliday,
+                    child: const Icon(
+                      Icons.add_circle,
+                      size: 28,
+                      color: Colors.blueAccent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
 
-  Widget sectionHeader(String title, VoidCallback onAdd) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          ElevatedButton(onPressed: onAdd, child: const Icon(Icons.add)),
-        ],
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
     );
   }

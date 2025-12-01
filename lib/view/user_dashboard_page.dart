@@ -69,7 +69,7 @@ class _UserHomePageState extends State<UserHomePage> {
         }catch (e){
         print(e);
         }
-        
+        print(usedLeaveTypeCount[type]);
         usedLeaveTypeCount[type] = (usedLeaveTypeCount[type] ?? 0) + dayCount;
       }
     }
@@ -77,15 +77,15 @@ class _UserHomePageState extends State<UserHomePage> {
 
   Future<void> fetchLeaveTypes() async {
     final doc = await FirebaseFirestore.instance
-        .collection("admin_data")
+        .collection("admins")
         .doc(adminDocId)
         .get();
 
     leaveTypes = List<Map<String, dynamic>>.from(
-      doc.data()?["leave_types"] ?? [],
+      doc.data()?["yearlyLeaves"] ?? [],
     );
     holidays = List<Map<String, dynamic>>.from(
-      doc.data()?["national_holiday"] ?? [],
+      doc.data()?["nationalHoliday"] ?? [],
     );
   }
 

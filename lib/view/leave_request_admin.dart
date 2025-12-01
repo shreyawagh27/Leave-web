@@ -181,18 +181,18 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                                                 );
                                                  }),
                                            const SizedBox(width: 8),
-                                        _actionButton('Reject', Colors.redAccent, () async {
+                                        _actionButton('Cancel Leave', Colors.redAccent, () async {
                                             await FirebaseFirestore.instance
                                                       .collection('leave_request')
                                                       .doc(leave.id)
-                                                      .update({'status': 'Rejected'});
+                                                      .update({'status': 'Cancel Leave'});
 
                                                 setState(() {
-                                                   leave.status = 'Rejected';
+                                                   leave.status = 'Cancel Leave';
                                                          });
 
                                                   ScaffoldMessenger.of(context).showSnackBar(
-                                                         const SnackBar(content: Text('Leave rejected successfully')),
+                                                         const SnackBar(content: Text('Leave Canceled successfully')),
                                                         );
                                                    }),
                                          const SizedBox(width: 8),
@@ -217,7 +217,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                                   fontWeight: FontWeight.bold,
                                   color: leave.status == 'Approved'
                                       ? Colors.green
-                                      : leave.status == 'Rejected'
+                                      : leave.status == 'Canceled'
                                           ? Colors.red
                                           : Colors.orange,
                                 ),

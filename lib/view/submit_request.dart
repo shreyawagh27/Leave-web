@@ -19,8 +19,8 @@ class _SubmitRequestState extends State<SubmitRequest> {
   String? selectedEndDate;
   String? selectedDurationType;
   TextEditingController desController = TextEditingController();
-
-  final List<String> leaveType = [
+  List<Map<String, dynamic>> leaveTypes = [];
+  List<String> leaveType = [
     'NH/RH',
     'Sick',
     'Planned',
@@ -32,6 +32,30 @@ class _SubmitRequestState extends State<SubmitRequest> {
   final List<String> durationType = ['Half Day', 'Full Day'];
 
   String defaultValue = "";
+  void fetchData() async {
+    final doc = await FirebaseFirestore.instance
+        .collection("admins")
+        .doc("admin@gmail.com")
+        .get();
+
+    final leaveTypesData = List<Map<String, dynamic>>.from(
+      doc.data()?["yearlyLeaves"] ?? [],
+    );
+    log(leaveType.toString());
+    leaveType = leaveTypesData.map((element) {
+      return element['name'].toString();
+    }).toList();
+    log(leaveType.toString());
+    setState(() {
+      
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +79,6 @@ class _SubmitRequestState extends State<SubmitRequest> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-        
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -83,12 +106,10 @@ class _SubmitRequestState extends State<SubmitRequest> {
                   });
                 },
               ),
-              
             ),
 
             const SizedBox(height: 10),
 
-            
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -108,14 +129,20 @@ class _SubmitRequestState extends State<SubmitRequest> {
                   );
                   if (datePicked != null) {
                     setState(() {
-                      selectedDate = DateFormat('dd MMM yyyy').format(datePicked);
+                      selectedDate = DateFormat(
+                        'dd MMM yyyy',
+                      ).format(datePicked);
                     });
                   }
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.calendar_today, size: 20, color: Colors.black54),
+                    const Icon(
+                      Icons.calendar_today,
+                      size: 20,
+                      color: Colors.black54,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       selectedDate ?? 'Start Date',
@@ -156,14 +183,20 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
                   if (datePicked != null) {
                     setState(() {
-                      selectedEndDate = DateFormat('dd MMM yyyy').format(datePicked);
+                      selectedEndDate = DateFormat(
+                        'dd MMM yyyy',
+                      ).format(datePicked);
                     });
                   }
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.calendar_today, size: 20, color: Colors.black54),
+                    const Icon(
+                      Icons.calendar_today,
+                      size: 20,
+                      color: Colors.black54,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       selectedEndDate ?? 'End Date',
@@ -243,7 +276,8 @@ class _SubmitRequestState extends State<SubmitRequest> {
                   );
                   return;
                 }
-                if (selectedDurationType == null || selectedDurationType!.isEmpty) {
+                if (selectedDurationType == null ||
+                    selectedDurationType!.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Please select a Duration')),
                   );
@@ -273,19 +307,20 @@ class _SubmitRequestState extends State<SubmitRequest> {
                   status: 'Pending',
                 );
 
-
                 log(leaveRequest.toMap().toString());
                 // Add to Firestore
-                
-                DocumentReference docRef = await FirebaseFirestore.instance
 
+                DocumentReference docRef = await FirebaseFirestore.instance
                     .collection("leave_request")
                     .add(leaveRequest.toMap());
 
                 // Update document with its own ID
                 await docRef.update({'id': docRef.id});
 
-                await FirebaseFirestore.instance.collection("user_data").doc(email).update({"requestid":docRef.id});
+                await FirebaseFirestore.instance
+                    .collection("user_data")
+                    .doc(email)
+                    .update({"requestid": docRef.id});
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
