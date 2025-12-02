@@ -1,29 +1,34 @@
+
+
 import 'package:intl/intl.dart';
 
 class LeaveRequest {
   String name;
   String type;
+  String email;
   String duration;
   DateTime startDate;
   DateTime endDate;
   String description;
   String status;
   String id;
-  String total;
+  double dayCount; 
 
   LeaveRequest({
     required this.name,
     required this.type,
+    required this.email,
     required this.duration,
     required this.startDate,
     required this.endDate,
     required this.description,
     required this.id,
     required this.status,
-    required this.total,
+    required this.dayCount,
+
   });
 
-  Map<String, dynamic> toMap() {
+   Map<String, dynamic> toMap() {
     return {
       'name': name,
       'start': DateFormat('dd MMM yyyy').format(startDate),
@@ -33,7 +38,11 @@ class LeaveRequest {
       'description': description,
       'id': id,
       'status': status,
-      'total': total,
+      'email': email,
+      'dayCount': dayCount,
+      
     };
   }
+  
+ 
 }

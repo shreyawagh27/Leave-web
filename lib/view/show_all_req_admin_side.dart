@@ -1,19 +1,19 @@
 import 'dart:developer';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../model/leave_request_model.dart';
 
-class LeaveRequestPage extends StatefulWidget {
-  const LeaveRequestPage({super.key});
+class ShowAllReqPage extends StatefulWidget {
+  const ShowAllReqPage ({super.key});
 
   @override
-  State<LeaveRequestPage> createState() => _LeaveRequestPageState();
+  State<ShowAllReqPage > createState() => ShowAllReqPageState();
 }
 
-class _LeaveRequestPageState extends State<LeaveRequestPage> {
+class ShowAllReqPageState extends State<ShowAllReqPage> {
   List<LeaveRequest> allLeaveRequests = [];
   bool isLoading = true;
 
@@ -22,8 +22,6 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
     super.initState();
     fetchData();
   }
-
-  Map<String, int> leaveTypeCount = {};
 
   Future<void> fetchData() async {
     try {
@@ -42,25 +40,22 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
         log(document.id);
 
         LeaveRequest leaveRequest = LeaveRequest(
-                    id: document.id,
+          id: document.id,
           name: map['name'] ?? 'Unknown',
           type: map['type'] ?? 'N/A',
+          email: map['email']?? 'email',
           duration: map['duration'] ?? 'N/A',
           startDate: format.parse(map['start']),
           endDate: format.parse(map['end']),
           description: map['description'] ?? '',
           status: map['status'] ?? 'Pending',
-          total: map['total']?.toString() ?? '0', // ⭐ FIX ADDED
+          dayCount: map['dayCount']?? 'dayCount',
+         // total: map ['total'] ?? 'Day',
         );
-
 
         allLeaveRequests.add(leaveRequest);
 
         print("Fetched ${i + 1}/${data.length}: ${leaveRequest.name}");
-      }
-      leaveTypeCount.clear();
-      for (var leave in allLeaveRequests) {
-        leaveTypeCount[leave.type] = (leaveTypeCount[leave.type] ?? 0) + 1;
       }
 
       setState(() {
@@ -166,74 +161,11 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            leave.status == 'Pending'
-                                ? Row(
-                                    children: [
-                                      _actionButton(
-                                        'Approve',
-                                        Colors.green,
-                                        () async {
-                                          await FirebaseFirestore.instance
-                                              .collection('leave_request')
-                                              .doc(leave.id)
-                                              .update({'status': 'Approved'});
-
-                                          setState(() {
-                                            leave.status = 'Approved';
-                                          });
-
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Leave approved successfully',
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      const SizedBox(width: 8),
-                                      _actionButton(
-                                        'Reject',
-                                        Colors.redAccent,
-                                        () async {
-                                          await FirebaseFirestore.instance
-                                              .collection('leave_request')
-                                              .doc(leave.id)
-                                              .update({'status': 'Rejected'});
-
-                                          setState(() {
-                                            leave.status = 'Rejected';
-                                          });
-
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Leave rejected successfully',
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      const SizedBox(width: 8),
-                                      _actionButton(
-                                        'View',
-                                        Colors.blueAccent,
-                                        () {
-                                          _showDetailsDialog(context, leave);
-                                        },
-                                      ),
-                                    ],
-                                  )
-                                : _actionButton('View', Colors.blueAccent, () {
-                                    _showDetailsDialog(context, leave);
-                                  }),
+                            _actionButton('View', Colors.blueAccent, () {
+                              _showDetailsDialog(context, leave);
+                            }),
                           ],
                         ),
-
                         const SizedBox(height: 10),
                         Align(
                           alignment: Alignment.centerRight,
@@ -243,7 +175,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                               fontWeight: FontWeight.bold,
                               color: leave.status == 'Approved'
                                   ? Colors.green
-                                  : leave.status == 'Rejected'
+                                  : leave.status == 'Cancel Leave'
                                   ? Colors.red
                                   : Colors.orange,
                             ),
@@ -258,6 +190,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
     );
   }
 
+  // Reusable button widget
   Widget _actionButton(String label, Color color, VoidCallback onPressed) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(

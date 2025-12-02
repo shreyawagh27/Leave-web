@@ -11,7 +11,7 @@ class AdminHomePage extends StatefulWidget {
 class _AdminHomePageState extends State<AdminHomePage> {
 
  // int totalUsers = 0;
-  int pendingLeaves = 0;
+  int? pendingLeaves = 0 ;
   int approvedLeaves = 0;
 
   //List totalUserList = ["Sanket", "Shreya", "Arati", "Vaishnavi", "Siddharth"];
@@ -109,7 +109,7 @@ List<Map<String, dynamic>> totalUserList = [];
   Future<void> saveHolidayToFirestore(Map<String, dynamic> holiday) async {
     final docRef = FirebaseFirestore.instance
         .collection('admins')
-        .doc('admin@gmail.com'); // your admin document id
+        .doc('admin@gmail.com'); 
 
     await docRef.update({
       'nationalHolidays': FieldValue.arrayUnion([holiday]),
@@ -153,6 +153,13 @@ List<Map<String, dynamic>> totalUserList = [];
 
 Future<void> _loadUserDataFromFirestore() async {
   try {
+    final pendingCountSnapshot = await FirebaseFirestore.instance
+    .collection('leave_request')
+    .where('status', isEqualTo: 'Pending')
+    .count()
+    .get();
+    pendingLeaves = pendingCountSnapshot.count;
+
     final snapshot = await FirebaseFirestore.instance.collection('user_data').get();
 
     setState(() {

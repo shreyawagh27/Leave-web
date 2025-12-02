@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/leave_request_model.dart';
 
@@ -24,9 +25,12 @@ class HistoryPageState extends State<HistoryPage> {
   }
 
   Future<void> fetchData() async {
+     SharedPreferences pref = await SharedPreferences.getInstance();
+     String userEmail = pref.getString("email")?? " ";
     try {
       final response = await FirebaseFirestore.instance
           .collection('leave_request')
+          .where('email', isEqualTo: userEmail)
           .get();
 
       List data = response.docs;
@@ -42,13 +46,14 @@ class HistoryPageState extends State<HistoryPage> {
         LeaveRequest leaveRequest = LeaveRequest(
           id: document.id,
           name: map['name'] ?? 'Unknown',
+          email: map['email']?? 'email',
           type: map['type'] ?? 'N/A',
           duration: map['duration'] ?? 'N/A',
           startDate: format.parse(map['start']),
           endDate: format.parse(map['end']),
           description: map['description'] ?? '',
           status: map['status'] ?? 'Pending',
-          total: map ['total'] ?? 'Day',
+          dayCount: map['dayCount']?? 'dayCount',
         );
 
         allLeaveRequests.add(leaveRequest);
@@ -173,7 +178,7 @@ class HistoryPageState extends State<HistoryPage> {
                               fontWeight: FontWeight.bold,
                               color: leave.status == 'Approved'
                                   ? Colors.green
-                                  : leave.status == 'Rejected'
+                                  : leave.status == 'Cancel Leave'
                                   ? Colors.red
                                   : Colors.orange,
                             ),

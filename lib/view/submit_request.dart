@@ -1,4 +1,5 @@
 import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/model/leave_request_model.dart';
@@ -17,19 +18,56 @@ class _SubmitRequestState extends State<SubmitRequest> {
   String? selectedDate;
   String? selectedEndDate;
   String? selectedDurationType;
-
   TextEditingController desController = TextEditingController();
 
-  final List<String> leaveType = [
-    'NH/RH',
+  double? dayCount; // ✅ FIX: ADDED THIS
+
+  List<Map<String, dynamic>> leaveTypes = [];
+  List<String> leaveType = [
     'Sick',
     'Planned',
-    'Unplanned',
+    'Unplanned/UnPaid',
     'Emergency',
-    'Compensatory',
+    
   ];
 
   final List<String> durationType = ['Half Day', 'Full Day'];
+
+  String defaultValue = "";
+
+  void fetchData() async {
+    final doc = await FirebaseFirestore.instance
+        .collection("admins")
+        .doc("admin@gmail.com")
+        .get();
+
+    final leaveTypesData = List<Map<String, dynamic>>.from(
+      doc.data()?["yearlyLeaves"] ?? [],
+    );
+
+    leaveType = leaveTypesData.map((element) {
+      return element['name'].toString();
+    }).toList();
+
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+  }
+
+  void calculateDayCount() {
+    if (selectedDate == null || selectedEndDate == null) return;
+
+    DateTime start = DateFormat('dd MMM yyyy').parse(selectedDate!);
+    DateTime end = DateFormat('dd MMM yyyy').parse(selectedEndDate!);
+
+    setState(() {
+      dayCount = end.difference(start).inDays + 1;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,13 +86,12 @@ class _SubmitRequestState extends State<SubmitRequest> {
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
         ),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-
-            // Leave Type
+            /// LEAVE TYPE
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -64,6 +101,7 @@ class _SubmitRequestState extends State<SubmitRequest> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.black),
               ),
+              alignment: Alignment.center,
               child: DropdownButton<String>(
                 isExpanded: true,
                 underline: const SizedBox(),
@@ -85,14 +123,16 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
             const SizedBox(height: 10),
 
-            // Start Date
+            /// START DATE
             Container(
+              width: MediaQuery.of(context).size.width,
               height: 50,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(),
               ),
+              alignment: Alignment.center,
               child: InkWell(
                 onTap: () async {
                   DateTime? datePicked = await showDatePicker(
@@ -106,17 +146,19 @@ class _SubmitRequestState extends State<SubmitRequest> {
                       selectedDate =
                           DateFormat('dd MMM yyyy').format(datePicked);
                     });
+                    calculateDayCount();
                   }
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.calendar_today),
+                    const Icon(Icons.calendar_today, size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      selectedDate ?? "Start Date",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    )
+                      selectedDate ?? 'Start Date',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
                   ],
                 ),
               ),
@@ -124,17 +166,19 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
             const SizedBox(height: 10),
 
-            // End Date
+            /// END DATE
             Container(
+              width: MediaQuery.of(context).size.width,
               height: 50,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(),
               ),
-              child: InkWell(
+              alignment: Alignment.center,
+              child: GestureDetector(
                 onTap: () async {
-                  DateTime? start = selectedDate != null
+                  DateTime start = selectedDate != null
                       ? DateFormat('dd MMM yyyy').parse(selectedDate!)
                       : DateTime.now();
 
@@ -150,17 +194,19 @@ class _SubmitRequestState extends State<SubmitRequest> {
                       selectedEndDate =
                           DateFormat('dd MMM yyyy').format(datePicked);
                     });
+                    calculateDayCount();
                   }
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.calendar_today),
+                    const Icon(Icons.calendar_today, size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      selectedEndDate ?? "End Date",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    )
+                      selectedEndDate ?? 'End Date',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
                   ],
                 ),
               ),
@@ -168,8 +214,30 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
             const SizedBox(height: 10),
 
-            // Duration
+            /// SHOW DAY COUNT (FIXED — cannot return NULL)
+            if (dayCount != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.blue.shade50,
+                  border: Border.all(color: Colors.black54),
+                ),
+                child: Text(
+                  "Total Days: $dayCount",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 10),
+
+            /// DURATION TYPE
             Container(
+              width: MediaQuery.of(context).size.width,
               height: 50,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
@@ -177,6 +245,7 @@ class _SubmitRequestState extends State<SubmitRequest> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.black),
               ),
+              alignment: Alignment.center,
               child: DropdownButton<String>(
                 isExpanded: true,
                 underline: const SizedBox(),
@@ -198,10 +267,12 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
             const SizedBox(height: 10),
 
-            // Description
+            /// DESCRIPTION
             Container(
+              width: MediaQuery.of(context).size.width,
               height: 80,
-              padding: const EdgeInsets.all(10),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -211,15 +282,18 @@ class _SubmitRequestState extends State<SubmitRequest> {
                 controller: desController,
                 maxLines: 3,
                 decoration: const InputDecoration(
+                  hintText: 'Briefly describe your reason...',
                   border: InputBorder.none,
-                  hintText: "Briefly describe your reason...",
+                  hintStyle: TextStyle(color: Colors.black54),
                 ),
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
+            /// SUBMIT BUTTON
             FilledButton(
+              child: const Text("Submit"),
               onPressed: () async {
                 if (selectedLeaveType == null ||
                     selectedDurationType == null ||
@@ -228,66 +302,56 @@ class _SubmitRequestState extends State<SubmitRequest> {
                     desController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text("Please fill all required fields")),
+                        content: Text('Please fill all fields properly')),
                   );
                   return;
                 }
 
-                // Fetch user data
+                DateTime start =
+                    DateFormat('dd MMM yyyy').parse(selectedDate!);
+                DateTime end =
+                    DateFormat('dd MMM yyyy').parse(selectedEndDate!);
+
+                double finalDayCount = dayCount ?? 1;
+                if (selectedDurationType == "Half Day") {
+                  finalDayCount = 0.5;
+                }
+
                 final prefs = await SharedPreferences.getInstance();
                 String email = prefs.getString('email') ?? '';
                 String username = prefs.getString('username') ?? '';
 
-                // Calculate total days
-                DateTime s = DateFormat('dd MMM yyyy').parse(selectedDate!);
-                DateTime e = DateFormat('dd MMM yyyy').parse(selectedEndDate!);
-                int totalDays = e.difference(s).inDays + 1;
-
                 LeaveRequest leaveRequest = LeaveRequest(
                   name: username,
                   type: selectedLeaveType!,
+                  email: email,
                   duration: selectedDurationType!,
-                  startDate: s,
-                  endDate: e,
+                  startDate: start,
+                  endDate: end,
                   description: desController.text,
                   id: '',
                   status: 'Pending',
-                  total: totalDays.toString(),
+                  dayCount: finalDayCount,
                 );
 
-                log(leaveRequest.toMap().toString());
-
-                // Add to Firestore
                 DocumentReference docRef = await FirebaseFirestore.instance
                     .collection("leave_request")
                     .add(leaveRequest.toMap());
 
                 await docRef.update({'id': docRef.id});
 
-                FirebaseFirestore.instance
+                await FirebaseFirestore.instance
                     .collection("user_data")
                     .doc(email)
                     .update({"requestid": docRef.id});
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
-                        "Leave request submitted successfully! ID: ${docRef.id}"),
+                    content:
+                        Text('Leave request submitted! ID: ${docRef.id}'),
                   ),
                 );
               },
-
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 130, vertical: 14),
-              ),
-
-              child: const Text(
-                "Submit Request",
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
             ),
           ],
         ),
