@@ -12,6 +12,7 @@ class LeaveRequest {
   String description;
   String status;
   String id;
+  double dayCount; 
 
   LeaveRequest({
     required this.name,
@@ -23,6 +24,7 @@ class LeaveRequest {
     required this.description,
     required this.id,
     required this.status,
+    required this.dayCount,
 
   });
 
@@ -37,9 +39,10 @@ class LeaveRequest {
       'id': id,
       'status': status,
       'email': email,
+      'dayCount': dayCount,
+      
     };
   }
   
  
 }
-

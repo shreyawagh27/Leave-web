@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'user_details_admin_side.dart';
+
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
 
@@ -545,28 +547,31 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       itemBuilder: (_, index) {
                         final user = totalUserList[index];
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
+                        return ListTile(
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.person, color: Colors.teal),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  user["username"] ?? "Unknown User",
-                                  style: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          tileColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
                           ),
+                          leading: const Icon(Icons.person, color: Colors.teal),
+                          title: Text(
+                            user["username"] ?? "Unknown User",
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => UserDashboard(user: user),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),

@@ -53,6 +53,9 @@ class HistoryPageState extends State<HistoryPage> {
           endDate: format.parse(map['end']),
           description: map['description'] ?? '',
           status: map['status'] ?? 'Pending',
+            dayCount: map.containsKey('dayCount')
+      ? double.tryParse(map['dayCount'].toString()) ?? 1.0
+      : 1.0,
         );
 
         allLeaveRequests.add(leaveRequest);
@@ -177,7 +180,7 @@ class HistoryPageState extends State<HistoryPage> {
                               fontWeight: FontWeight.bold,
                               color: leave.status == 'Approved'
                                   ? Colors.green
-                                  : leave.status == 'Cancel Leave'
+                                  : leave.status == 'Rejected'
                                   ? Colors.red
                                   : Colors.orange,
                             ),
@@ -212,10 +215,12 @@ class HistoryPageState extends State<HistoryPage> {
         content: Text(
           'Type: ${leave.type}\n'
           'Duration: ${leave.duration}\n'
+          'Day Count: ${leave.dayCount}\n'
           'From: ${DateFormat('dd MMM yyyy').format(leave.startDate)}\n'
           'To: ${DateFormat('dd MMM yyyy').format(leave.endDate)}\n'
           'Reason: ${leave.description}\n'
           'Status: ${leave.status}',
+
         ),
         actions: [
           TextButton(

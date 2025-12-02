@@ -30,7 +30,7 @@ class _UserHomePageState extends State<UserHomePage> {
     loadAllData();
   }
 
-  bool isLoading = true;
+  bool isLoading = false;
 
   Future<void> loadAllData() async {
     try {
@@ -82,7 +82,7 @@ class _UserHomePageState extends State<UserHomePage> {
         final type = doc['type'];
         int dayCount = 1;
         try {
-          dayCount = doc['dayCount'];
+          dayCount = int.tryParse(doc['dayCount'].toString()) ?? 0;
         } catch (e) {
           print(e);
         }

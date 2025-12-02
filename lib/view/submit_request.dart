@@ -19,19 +19,22 @@ class _SubmitRequestState extends State<SubmitRequest> {
   String? selectedEndDate;
   String? selectedDurationType;
   TextEditingController desController = TextEditingController();
+
+  double? dayCount; // ✅ FIX: ADDED THIS
+
   List<Map<String, dynamic>> leaveTypes = [];
   List<String> leaveType = [
-    'NH/RH',
     'Sick',
     'Planned',
-    'Unplanned',
+    'Unplanned/UnPaid',
     'Emergency',
-    'Compensatory',
+    
   ];
 
   final List<String> durationType = ['Half Day', 'Full Day'];
 
   String defaultValue = "";
+
   void fetchData() async {
     final doc = await FirebaseFirestore.instance
         .collection("admins")
@@ -41,20 +44,29 @@ class _SubmitRequestState extends State<SubmitRequest> {
     final leaveTypesData = List<Map<String, dynamic>>.from(
       doc.data()?["yearlyLeaves"] ?? [],
     );
-    log(leaveType.toString());
+
     leaveType = leaveTypesData.map((element) {
       return element['name'].toString();
     }).toList();
-    log(leaveType.toString());
-    setState(() {
-      
-    });
+
+    setState(() {});
   }
 
   @override
   void initState() {
     super.initState();
     fetchData();
+  }
+
+  void calculateDayCount() {
+    if (selectedDate == null || selectedEndDate == null) return;
+
+    DateTime start = DateFormat('dd MMM yyyy').parse(selectedDate!);
+    DateTime end = DateFormat('dd MMM yyyy').parse(selectedEndDate!);
+
+    setState(() {
+      dayCount = end.difference(start).inDays + 1;
+    });
   }
 
   @override
@@ -79,6 +91,7 @@ class _SubmitRequestState extends State<SubmitRequest> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
+            /// LEAVE TYPE
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -110,6 +123,7 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
             const SizedBox(height: 10),
 
+            /// START DATE
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -129,27 +143,21 @@ class _SubmitRequestState extends State<SubmitRequest> {
                   );
                   if (datePicked != null) {
                     setState(() {
-                      selectedDate = DateFormat(
-                        'dd MMM yyyy',
-                      ).format(datePicked);
+                      selectedDate =
+                          DateFormat('dd MMM yyyy').format(datePicked);
                     });
+                    calculateDayCount();
                   }
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 20,
-                      color: Colors.black54,
-                    ),
+                    const Icon(Icons.calendar_today, size: 20),
                     const SizedBox(width: 8),
                     Text(
                       selectedDate ?? 'Start Date',
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                          fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   ],
                 ),
@@ -158,7 +166,7 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
             const SizedBox(height: 10),
 
-            // End Date Picker
+            /// END DATE
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -170,9 +178,9 @@ class _SubmitRequestState extends State<SubmitRequest> {
               alignment: Alignment.center,
               child: GestureDetector(
                 onTap: () async {
-                  DateTime? start = selectedDate != null
+                  DateTime start = selectedDate != null
                       ? DateFormat('dd MMM yyyy').parse(selectedDate!)
-                      : DateTime(1970);
+                      : DateTime.now();
 
                   DateTime? datePicked = await showDatePicker(
                     context: context,
@@ -183,27 +191,21 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
                   if (datePicked != null) {
                     setState(() {
-                      selectedEndDate = DateFormat(
-                        'dd MMM yyyy',
-                      ).format(datePicked);
+                      selectedEndDate =
+                          DateFormat('dd MMM yyyy').format(datePicked);
                     });
+                    calculateDayCount();
                   }
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 20,
-                      color: Colors.black54,
-                    ),
+                    const Icon(Icons.calendar_today, size: 20),
                     const SizedBox(width: 8),
                     Text(
                       selectedEndDate ?? 'End Date',
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                          fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   ],
                 ),
@@ -212,7 +214,28 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
             const SizedBox(height: 10),
 
-            // Duration Type Dropdown
+            /// SHOW DAY COUNT (FIXED — cannot return NULL)
+            if (dayCount != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.blue.shade50,
+                  border: Border.all(color: Colors.black54),
+                ),
+                child: Text(
+                  "Total Days: $dayCount",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 10),
+
+            /// DURATION TYPE
             Container(
               width: MediaQuery.of(context).size.width,
               height: 50,
@@ -244,11 +267,12 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
             const SizedBox(height: 10),
 
-            // Description Box
+            /// DESCRIPTION
             Container(
               width: MediaQuery.of(context).size.width,
               height: 80,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -267,54 +291,53 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
             const SizedBox(height: 10),
 
-            // Submit Button
+            /// SUBMIT BUTTON
             FilledButton(
+              child: const Text("Submit"),
               onPressed: () async {
-                if (selectedLeaveType == null || selectedLeaveType!.isEmpty) {
+                if (selectedLeaveType == null ||
+                    selectedDurationType == null ||
+                    selectedDate == null ||
+                    selectedEndDate == null ||
+                    desController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select a leave type')),
+                    const SnackBar(
+                        content: Text('Please fill all fields properly')),
                   );
                   return;
                 }
-                if (selectedDurationType == null ||
-                    selectedDurationType!.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select a Duration')),
-                  );
-                  return;
+
+                DateTime start =
+                    DateFormat('dd MMM yyyy').parse(selectedDate!);
+                DateTime end =
+                    DateFormat('dd MMM yyyy').parse(selectedEndDate!);
+
+                double finalDayCount = dayCount ?? 1;
+                if (selectedDurationType == "Half Day") {
+                  finalDayCount = 0.5;
                 }
-                if (desController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a description')),
-                  );
-                  return;
-                }
-                //get email and username from sharedperfernces
+
                 final prefs = await SharedPreferences.getInstance();
                 String email = prefs.getString('email') ?? '';
                 String username = prefs.getString('username') ?? '';
-                // String email = "martin@gmail.com";
-                // String username = "martin";
+
                 LeaveRequest leaveRequest = LeaveRequest(
                   name: username,
                   type: selectedLeaveType!,
                   email: email,
                   duration: selectedDurationType!,
-                  startDate: DateFormat('dd MMM yyyy').parse(selectedDate!),
-                  endDate: DateFormat('dd MMM yyyy').parse(selectedEndDate!),
+                  startDate: start,
+                  endDate: end,
                   description: desController.text,
                   id: '',
                   status: 'Pending',
+                  dayCount: finalDayCount,
                 );
-
-                log(leaveRequest.toMap().toString());
-                // Add to Firestore
 
                 DocumentReference docRef = await FirebaseFirestore.instance
                     .collection("leave_request")
                     .add(leaveRequest.toMap());
 
-                // Update document with its own ID
                 await docRef.update({'id': docRef.id});
 
                 await FirebaseFirestore.instance
@@ -324,30 +347,11 @@ class _SubmitRequestState extends State<SubmitRequest> {
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
-                      'Leave request submitted successfully! (ID: ${docRef.id})',
-                    ),
+                    content:
+                        Text('Leave request submitted! ID: ${docRef.id}'),
                   ),
                 );
               },
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF4285F4),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 125,
-                  vertical: 14,
-                ),
-              ),
-              child: const Text(
-                'Submit Request',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
             ),
           ],
         ),

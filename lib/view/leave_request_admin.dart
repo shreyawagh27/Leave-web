@@ -54,6 +54,9 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
         endDate: format.parse(map['end']),
         description: map['description'] ?? '',
         status: map ['status'] ?? 'Pending',
+        dayCount: map.containsKey('dayCount')
+    ? double.tryParse(map['dayCount'].toString()) ?? 1.0
+    : 1.0,
       );
 
       
