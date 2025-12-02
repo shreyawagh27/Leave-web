@@ -9,16 +9,14 @@ class AdminHomePage extends StatefulWidget {
 }
 
 class _AdminHomePageState extends State<AdminHomePage> {
-
- // int totalUsers = 0;
-  int? pendingLeaves = 0 ;
+  // int totalUsers = 0;
+  int? pendingLeaves = 0;
   int approvedLeaves = 0;
 
   //List totalUserList = ["Sanket", "Shreya", "Arati", "Vaishnavi", "Siddharth"];
 
-
-    int totalUsers = 0;
-List<Map<String, dynamic>> totalUserList = [];
+  int totalUsers = 0;
+  List<Map<String, dynamic>> totalUserList = [];
 
   List<String> days = [
     "Monday",
@@ -109,7 +107,7 @@ List<Map<String, dynamic>> totalUserList = [];
   Future<void> saveHolidayToFirestore(Map<String, dynamic> holiday) async {
     final docRef = FirebaseFirestore.instance
         .collection('admins')
-        .doc('admin@gmail.com'); 
+        .doc('admin@gmail.com');
 
     await docRef.update({
       'nationalHolidays': FieldValue.arrayUnion([holiday]),
@@ -149,27 +147,34 @@ List<Map<String, dynamic>> totalUserList = [];
     }
   }
 
+  bool isLoading = true;
 
+  Future<void> _loadUserDataFromFirestore() async {
+    try {
+      setState(() => isLoading = true);
 
-Future<void> _loadUserDataFromFirestore() async {
-  try {
-    final pendingCountSnapshot = await FirebaseFirestore.instance
-    .collection('leave_request')
-    .where('status', isEqualTo: 'Pending')
-    .count()
-    .get();
-    pendingLeaves = pendingCountSnapshot.count;
+      final pendingCountSnapshot = await FirebaseFirestore.instance
+          .collection('leave_request')
+          .where('status', isEqualTo: 'Pending')
+          .count()
+          .get();
 
-    final snapshot = await FirebaseFirestore.instance.collection('user_data').get();
+      pendingLeaves = pendingCountSnapshot.count;
 
-    setState(() {
-      totalUserList = snapshot.docs.map((doc) => doc.data()).toList();
-      totalUsers = totalUserList.length;
-    });
-  } catch (e) {
-    print("Error loading user data: $e");
+      final snapshot = await FirebaseFirestore.instance
+          .collection('user_data')
+          .get();
+
+      setState(() {
+        totalUserList = snapshot.docs.map((doc) => doc.data()).toList();
+        totalUsers = totalUserList.length;
+        isLoading = false;
+      });
+    } catch (e) {
+      print("Error loading user data: $e");
+      setState(() => isLoading = false);
+    }
   }
-}
 
   void nextHoliday() => setState(() {
     if (_holidays.isNotEmpty) {
@@ -507,72 +512,73 @@ Future<void> _loadUserDataFromFirestore() async {
       ),
     );
   }
-void _showEmployeeList(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) => StatefulBuilder(
-      builder: (context, setSheet) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.75,
-            child: Column(
-              children: [
-                const Text(
-                  "Employee List",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
 
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: totalUserList.length,
-                    itemBuilder: (_, index) {
-                      final user = totalUserList[index];
+  void _showEmployeeList(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheet) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.75,
+              child: Column(
+                children: [
+                  const Text(
+                    "Employee List",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
 
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.person, color: Colors.teal),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                user["username"] ?? "Unknown User",
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: totalUserList.length,
+                      itemBuilder: (_, index) {
+                        final user = totalUserList[index];
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.person, color: Colors.teal),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  user["username"] ?? "Unknown User",
+                                  style: const TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
-      },
-    ),
-  );
-}
+          );
+        },
+      ),
+    );
+  }
 
   void _showWeeklyOffSelector(BuildContext context) {
     showModalBottomSheet(
@@ -710,166 +716,167 @@ void _showEmployeeList(BuildContext context) {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          children: [
-            /// FIRST ROW
-            LayoutBuilder(
-              builder: (context, constraints) {
-                return Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    SizedBox(
-                      width: constraints.maxWidth / 3 - 10,
-                      child: _buildDashboardCard(
-                        color: Colors.blue.shade100,
-                        icon: Icons.people_alt_outlined,
-                        value: totalUsers.toString(),
-                        label: "Total Employees",
-                        onTap: () => _showEmployeeList(context),
-                      ),
-                    ),
-                    SizedBox(
-                      width: constraints.maxWidth / 3 - 10,
-                      child: _buildDashboardCard(
-                        color: Colors.orange.shade100,
-                        icon: Icons.pending_actions_outlined,
-                        value: pendingLeaves.toString(),
-                        label: "Pending Leaves",
-                      ),
-                    ),
-                    SizedBox(
-                      width: constraints.maxWidth / 3 - 10,
-                      child: _buildDashboardCard(
-                        color: Colors.green.shade100,
-                        icon: Icons.verified_outlined,
-                        value: approvedLeaves.toString(),
-                        label: "Approved Leaves",
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            /// SECOND ROW
-            LayoutBuilder(
-              builder: (context, constraints) {
-                return Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    SizedBox(
-                      width: constraints.maxWidth / 3 - 10,
-                      child: _buildDashboardCard(
-                        color: Colors.purple.shade100,
-                        icon: Icons.holiday_village,
-                        value: totalLeaveDays.toString(),
-                        label: "Yearly Holidays",
-                        onTap: _showYearlyLeaveList,
-                      ),
-                    ),
-                    SizedBox(
-                      width: constraints.maxWidth / 3 - 10,
-                      child: _buildDashboardCard(
-                        color: Colors.teal.shade100,
-                        icon: Icons.event_available,
-                        value: "8",
-                        label: "Used Leaves",
-                      ),
-                    ),
-                    SizedBox(
-                      width: constraints.maxWidth / 3 - 10,
-                      child: _buildDashboardCard(
-                        color: Colors.indigo.shade100,
-                        icon: Icons.calendar_today,
-                        value: selectedDays.join(", "),
-                        label: "Weekly Off",
-                        onTap: () => _showWeeklyOffSelector(context),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-
-            const SizedBox(height: 25),
-
-            Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFE3F2FD), Color(0xFFEDE7F6)],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        "National Holidays",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueAccent,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        h["name"] ?? "",
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "${h['date']} • ${h['day']}",
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back_ios),
-                            onPressed: prevHoliday,
+                          SizedBox(
+                            width: constraints.maxWidth / 3 - 10,
+                            child: _buildDashboardCard(
+                              color: Colors.blue.shade100,
+                              icon: Icons.people_alt_outlined,
+                              value: totalUsers.toString(),
+                              label: "Total Employees",
+                              onTap: () => _showEmployeeList(context),
+                            ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.arrow_forward_ios),
-                            onPressed: nextHoliday,
+                          SizedBox(
+                            width: constraints.maxWidth / 3 - 10,
+                            child: _buildDashboardCard(
+                              color: Colors.orange.shade100,
+                              icon: Icons.pending_actions_outlined,
+                              value: pendingLeaves.toString(),
+                              label: "Pending Leaves",
+                            ),
+                          ),
+                          SizedBox(
+                            width: constraints.maxWidth / 3 - 10,
+                            child: _buildDashboardCard(
+                              color: Colors.green.shade100,
+                              icon: Icons.verified_outlined,
+                              value: approvedLeaves.toString(),
+                              label: "Approved Leaves",
+                            ),
                           ),
                         ],
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  /// SECOND ROW
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          SizedBox(
+                            width: constraints.maxWidth / 3 - 10,
+                            child: _buildDashboardCard(
+                              color: Colors.purple.shade100,
+                              icon: Icons.holiday_village,
+                              value: totalLeaveDays.toString(),
+                              label: "Yearly Holidays",
+                              onTap: _showYearlyLeaveList,
+                            ),
+                          ),
+                          SizedBox(
+                            width: constraints.maxWidth / 3 - 10,
+                            child: _buildDashboardCard(
+                              color: Colors.teal.shade100,
+                              icon: Icons.event_available,
+                              value: "8",
+                              label: "Used Leaves",
+                            ),
+                          ),
+                          SizedBox(
+                            width: constraints.maxWidth / 3 - 10,
+                            child: _buildDashboardCard(
+                              color: Colors.indigo.shade100,
+                              icon: Icons.calendar_today,
+                              value: selectedDays.join(", "),
+                              label: "Weekly Off",
+                              onTap: () => _showWeeklyOffSelector(context),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  Stack(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFE3F2FD), Color(0xFFEDE7F6)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              "National Holidays",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueAccent,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              h["name"] ?? "",
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              "${h['date']} • ${h['day']}",
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_back_ios),
+                                  onPressed: prevHoliday,
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_forward_ios),
+                                  onPressed: nextHoliday,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: InkWell(
+                          onTap: addNewHoliday,
+                          child: const Icon(
+                            Icons.add_circle,
+                            size: 28,
+                            color: Colors.blueAccent,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                ),
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: InkWell(
-                    onTap: addNewHoliday,
-                    child: const Icon(
-                      Icons.add_circle,
-                      size: 28,
-                      color: Colors.blueAccent,
-                    ),
-                  ),
-                ),
-              ],
-            ),
 
-            const SizedBox(height: 30),
-          ],
-        ),
-      ),
+                  const SizedBox(height: 30),
+                ],
+              ),
+            ),
     );
   }
 }

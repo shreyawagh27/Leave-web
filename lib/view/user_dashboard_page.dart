@@ -30,13 +30,28 @@ class _UserHomePageState extends State<UserHomePage> {
     loadAllData();
   }
 
+  bool isLoading = true;
+
   Future<void> loadAllData() async {
-    await fetchLeaveTypes();
-    await fetchWeeklyOff();
-    await fetchLeaveCounts();
-    //await fetchHolidays();
-    await fetchLeaveBalance();
-    setState(() {});
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      await fetchLeaveTypes();
+      await fetchWeeklyOff();
+      await fetchLeaveCounts();
+      await fetchLeaveBalance();
+
+      setState(() {
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching data: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   Future<void> fetchLeaveCounts() async {
@@ -51,6 +66,8 @@ class _UserHomePageState extends State<UserHomePage> {
     pending = 0;
     approved = 0;
     rejected = 0;
+    usedLeaveTypeCount.clear();
+
     for (int i = 0; i < snap.docs.length; i++) {
       final doc = snap.docs[i];
       final status = doc["status"];
@@ -65,9 +82,9 @@ class _UserHomePageState extends State<UserHomePage> {
         final type = doc['type'];
         int dayCount = 1;
         try {
-           dayCount = doc['dayCount'];
-        }catch (e){
-        print(e);
+          dayCount = doc['dayCount'];
+        } catch (e) {
+          print(e);
         }
         print(usedLeaveTypeCount[type]);
         usedLeaveTypeCount[type] = (usedLeaveTypeCount[type] ?? 0) + dayCount;
@@ -89,6 +106,18 @@ class _UserHomePageState extends State<UserHomePage> {
     );
   }
 
+  void calculateTotalBalance() {
+    totalBalance = 0;
+
+    for (var leave in leaveTypes) {
+      String leaveName = leave["name"];
+      int allowed = leave["days"];
+      int used = usedLeaveTypeCount[leaveName] ?? 0;
+
+      totalBalance += (allowed - used);
+    }
+  }
+
   Future<void> fetchWeeklyOff() async {
     final doc = await FirebaseFirestore.instance
         .collection("admins")
@@ -104,7 +133,7 @@ class _UserHomePageState extends State<UserHomePage> {
     for (int i = 0; i < leaveTypes.length; i++) {
       String leaveName = leaveTypes[i]["name"];
       int allowed = leaveTypes[i]["days"];
-      int usedCount = usedLeaveTypeCount[leaveName]?? 0;
+      int usedCount = usedLeaveTypeCount[leaveName] ?? 0;
       log('leaveType: $leaveName   allowed:  $allowed   used: $usedCount  ');
       final snap = await FirebaseFirestore.instance
           .collection("leave_request")
@@ -123,7 +152,9 @@ class _UserHomePageState extends State<UserHomePage> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(title: const Text("User Dashboard"), centerTitle: true),
-      body: SingleChildScrollView(
+      body: isLoading
+    ? const Center(child: CircularProgressIndicator())
+    : SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
@@ -167,6 +198,7 @@ class _UserHomePageState extends State<UserHomePage> {
 
             const SizedBox(height: 25),
 
+            const SizedBox(height: 25),
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -207,16 +239,39 @@ class _UserHomePageState extends State<UserHomePage> {
               children: List.generate(leaveTypes.length, (i) {
                 String name = leaveTypes[i]["name"];
                 int allowed = leaveTypes[i]["days"];
+                int used = usedLeaveTypeCount[name] ?? 0;
+                int balance = allowed - used;
 
                 return Card(
                   child: ListTile(
                     title: Text(name),
-                    subtitle: Text(
-                      "Allowed: $allowed",
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    subtitle: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Allowed: $allowed",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blue,
+                          ),
+                        ),
+                        SizedBox(width: 20),
+                        Text(
+                          "Used: $used",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
+                          ),
+                        ),
+                        SizedBox(width: 20),
+                        Text(
+                          "Remaining: $balance",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );
