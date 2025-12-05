@@ -573,7 +573,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                             );
                           },
                         );
-                      },
+                      }, 
                     ),
                   ),
                 ],

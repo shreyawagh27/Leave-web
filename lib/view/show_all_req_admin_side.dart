@@ -49,7 +49,9 @@ class ShowAllReqPageState extends State<ShowAllReqPage> {
           endDate: format.parse(map['end']),
           description: map['description'] ?? '',
           status: map['status'] ?? 'Pending',
-          dayCount: map['dayCount']?? 'dayCount',
+          dayCount: map.containsKey('dayCount')
+    ? double.tryParse(map['dayCount'].toString()) ?? 1.0
+    : 1.0,
          // total: map ['total'] ?? 'Day',
         );
 
