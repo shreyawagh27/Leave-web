@@ -168,7 +168,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
           .get();
 
       setState(() {
-        totalUserList = snapshot.docs.map((doc) => doc.data()).toList();
+        totalUserList = snapshot.docs.map((doc){
+            var temp = doc.data();
+            temp["email"]= doc.id;
+            return temp;
+        }).toList();
         totalUsers = totalUserList.length;
         isLoading = false;
       });
@@ -568,7 +572,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => UserDashboard(user: user),
+                                builder: (_) => UserDashboard(userData: user),
                               ),
                             );
                           },

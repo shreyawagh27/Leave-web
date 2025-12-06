@@ -7,10 +7,10 @@ import 'package:intl/intl.dart';
 import '../model/leave_request_model.dart';
 
 class ShowAllReqPage extends StatefulWidget {
-  const ShowAllReqPage ({super.key});
+  const ShowAllReqPage({super.key});
 
   @override
-  State<ShowAllReqPage > createState() => ShowAllReqPageState();
+  State<ShowAllReqPage> createState() => ShowAllReqPageState();
 }
 
 class ShowAllReqPageState extends State<ShowAllReqPage> {
@@ -43,16 +43,16 @@ class ShowAllReqPageState extends State<ShowAllReqPage> {
           id: document.id,
           name: map['name'] ?? 'Unknown',
           type: map['type'] ?? 'N/A',
-          email: map['email']?? 'email',
+          email: map['email'] ?? 'email',
           duration: map['duration'] ?? 'N/A',
           startDate: format.parse(map['start']),
           endDate: format.parse(map['end']),
           description: map['description'] ?? '',
           status: map['status'] ?? 'Pending',
           dayCount: map.containsKey('dayCount')
-    ? double.tryParse(map['dayCount'].toString()) ?? 1.0
-    : 1.0,
-         // total: map ['total'] ?? 'Day',
+              ? double.tryParse(map['dayCount'].toString()) ?? 1.0
+              : 1.0,
+          // total: map ['total'] ?? 'Day',
         );
 
         allLeaveRequests.add(leaveRequest);
@@ -179,7 +179,6 @@ class ShowAllReqPageState extends State<ShowAllReqPage> {
                                   ? Colors.green
                                   : leave.status == 'Rejected'
                                   ? Colors.red
-                                  
                                   : Colors.orange,
                             ),
                           ),

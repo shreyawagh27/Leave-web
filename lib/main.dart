@@ -11,6 +11,7 @@ import 'view/login_page.dart';
 import 'view/registration_page.dart';
 import 'view/submit_request.dart'; 
 import 'view/leave_request_admin.dart';
+import 'view/user_details_admin_side.dart';
 
 
 void main() async {

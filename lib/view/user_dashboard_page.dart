@@ -102,7 +102,7 @@ class _UserHomePageState extends State<UserHomePage> {
       doc.data()?["yearlyLeaves"] ?? [],
     );
     holidays = List<Map<String, dynamic>>.from(
-      doc.data()?["nationalHoliday"] ?? [],
+      doc.data()?["nationalHolidays"] ?? [],
     );
   }
 
@@ -112,7 +112,7 @@ class _UserHomePageState extends State<UserHomePage> {
     for (var leave in leaveTypes) {
       String leaveName = leave["name"];
       int allowed = leave["days"];
-      int used = usedLeaveTypeCount[leaveName] ?? 0;
+      int used = usedLeaveTypeCount[leaveName] ?? 1;
 
       totalBalance += (allowed - used);
     }
@@ -138,7 +138,7 @@ class _UserHomePageState extends State<UserHomePage> {
       final snap = await FirebaseFirestore.instance
           .collection("leave_request")
           .where("email", isEqualTo: userEmail)
-          // .where("type", isEqualTo: leaveName)
+          //.where("type", isEqualTo: leaveName)
           .where("status", isEqualTo: "Approved")
           .get();
 
